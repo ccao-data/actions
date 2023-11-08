@@ -33,8 +33,7 @@ env:
   DOCKER_REGISTRY: ghcr.io
   DOCKER_IMAGE_NAME: ${{ github.repository }}
   ACTIONS_REF: jeancochrane/add-batch-and-terraform-workflows-and-actions
-  ACTIONS_PATH: ./actions
-  TERRAFORM_WORKING_DIRECTORY: ${{ env.ACTIONS_PATH }}/.github/workflows/batch-job-terraform/
+  TERRAFORM_WORKING_DIRECTORY: ./actions/.github/workflows/batch-job-terraform/
 
 jobs:
   build:
@@ -109,10 +108,10 @@ jobs:
         with:
           repository: ccao-data/actions
           ref: ${{ env.ACTIONS_REF }}
-          path: ${{ env.ACTIONS_PATH }}
+          path: ./actions/
 
       - name: Setup Terraform
-        uses: ${{ env.ACTIONS_PATH }}/setup-terraform
+        uses: ./actions/setup-terraform
         with:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME_ARN }}
           aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
@@ -156,13 +155,13 @@ jobs:
         working-directory: ${{ env.TERRAFORM_WORKING_DIRECTORY }}
 
       - name: Wait for Batch job to start and print link to AWS logs
-        run: $ACTIONS_PATH/.github/workflows/scripts/batch_job_poll_status.sh "$BATCH_JOB_ID" startup
+        run: ./actions/.github/workflows/scripts/batch_job_poll_status.sh "$BATCH_JOB_ID" startup
         shell: bash
         env:
           BATCH_JOB_ID: ${{ steps.submit-job.outputs.batch-job-id }}
 
       - name: Wait for Batch job to complete
-        run: $ACTIONS_PATH/.github/workflows/scripts/batch_job_poll_status.sh "$BATCH_JOB_ID"
+        run: ./actions/.github/workflows/scripts/batch_job_poll_status.sh "$BATCH_JOB_ID"
         shell: bash
         env:
           BATCH_JOB_ID: ${{ steps.submit-job.outputs.batch-job-id }}

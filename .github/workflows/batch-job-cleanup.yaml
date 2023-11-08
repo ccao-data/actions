@@ -11,8 +11,7 @@ name: batch-job-cleanup
 
 env:
   ACTIONS_REF: jeancochrane/add-batch-and-terraform-workflows-and-actions
-  ACTIONS_PATH: ./actions
-  TERRAFORM_WORKING_DIRECTORY: ${{ env.ACTIONS_PATH }}/.github/workflows/batch-job-terraform/
+  TERRAFORM_WORKING_DIRECTORY: ./actions/.github/workflows/batch-job-terraform/
 
 jobs:
   cleanup:
@@ -26,10 +25,10 @@ jobs:
         with:
           repository: ccao-data/actions
           ref: ${{ env.ACTIONS_REF }}
-          path: ${{ env.ACTIONS_PATH }}
+          path: ./actions/
 
       - name: Cleanup Terraform
-        uses: ${{ env.ACTIONS_PATH }}/cleanup-terraform
+        uses: ./actions/cleanup-terraform
         with:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME_ARN }}
           aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
