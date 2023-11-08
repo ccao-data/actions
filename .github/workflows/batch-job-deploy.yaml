@@ -1,5 +1,5 @@
 ---
-name: build-and-run-batch-job
+name: batch-job-deploy
 
 "on":
   workflow_call:
@@ -32,7 +32,7 @@ name: build-and-run-batch-job
 env:
   DOCKER_REGISTRY: ghcr.io
   DOCKER_IMAGE_NAME: ${{ github.repository }}
-  TERRAFORM_WORKING_DIRECTORY: ./workflows/build-and-run-batch-job/terraform/
+  TERRAFORM_WORKING_DIRECTORY: ./.github/workflows/batch-job-terraform/
 
 jobs:
   build:

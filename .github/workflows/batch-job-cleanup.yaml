@@ -1,5 +1,5 @@
 ---
-name: cleanup
+name: batch-job-cleanup
 
 "on":
   workflow_call:
@@ -21,4 +21,4 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME_ARN }}
           aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
-          working-directory: ./workflows/build-and-run-batch-job/terraform/
+          working-directory: ./.github/workflows/batch-job-terraform/
