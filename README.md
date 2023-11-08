@@ -5,6 +5,15 @@ GitHub Actions for CCAO Data projects.
 This repo also includes reusable workflows (stored in the `workflows` directory)
 and bash scripts to support them (stored in the `scripts` directory.)
 
+## Quick links
+
+* [Actions](#actions)
+  * [`setup-terraform`](#setup-terraform)
+  * [`cleanup-terraform`](#cleanup-terraform)
+* [Workflows](#workflows)
+  * [`build-and-run-batch-job/deploy`](#build-and-run-batch-jobdeploy)
+  * [`build-and-run-batch-job/cleanup`](#build-and-run-batch-jobcleanup)
+
 ## Actions
 
 The following composite actions are available for use:
@@ -16,7 +25,9 @@ prod).
 
 #### Requirements
 
-* At least one Terraform (`*.tf`) config file must exist in the repo.
+* At least one Terraform (`*.tf`) config file must exist in the repo. The path
+  to these files can be specified with the `working-directory` input variable
+  (defaults to `"."`).
 * The calling workflow must grant the following permissions to the job that
   calls this action:
     * `contents: read`
@@ -30,6 +41,18 @@ See the `Setup Terraform` step in the `run` job in the
 [build-and-run-batch-job/deploy](./workflows/build-and-run-batch-job/deploy.yaml)
 workflow.
 
+### cleanup-terraform
+
+Delete all AWS resources managed by a Terraform configuration.
+
+#### Requirements
+
+See the requirements for [`setup-terraform`](#setup-terraform).
+
+#### Sample usage
+
+See the sample usage for [`setup-terraform`](#setup-terraform).
+
 ## Workflows
 
 The following reusable workflows are available for use:
@@ -41,7 +64,7 @@ optionally use that container image to run a job on AWS Batch.
 
 The Batch job will be gated behind an environment called `deploy`, which can
 be configured to require approval before running. This is handy for intensive
-workflows that don't need to be run on every commit during development.
+jobs that don't need to be run on every commit during development.
 
 #### Requirements
 

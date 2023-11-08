@@ -1,5 +1,5 @@
 ---
-name: cleanup-terraform
+name: cleanup
 
 "on":
   workflow_call:
@@ -9,29 +9,16 @@ name: cleanup-terraform
       AWS_ACCOUNT_ID:
         required: true
 
-env:
-  TERRAFORM_WORKING_DIRECTORY: ./workflows/build-and-run-batch-job/terraform/
-
 jobs:
-  cleanup-terraform:
+  cleanup:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Terraform
+      - name: Cleanup Terraform
         uses: ./actions/setup-terraform
         with:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME_ARN }}
           aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
-          working-directory: ${{ env.TERRAFORM_WORKING_DIRECTORY }}
-          # These values can be anything, since Terraform doesn't need correct
-          # values for variables in order to destroy resources
-          batch-container-image-name: foo
-          batch-job-definition-vcpu: bar
-          batch-job-definition-memory: baz
-
-      - name: Delete resources using Terraform
-        run: terraform destroy -auto-approve
-        working-directory: ${{ env.TERRAFORM_WORKING_DIRECTORY }}
-        shell: bash
+          working-directory: ./workflows/build-and-run-batch-job/terraform/

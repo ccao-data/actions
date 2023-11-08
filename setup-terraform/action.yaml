@@ -1,6 +1,7 @@
 ---
-name: Setup Terraform
+name: setup-terraform
 description: Install and configure Terraform and AWS for the correct environment
+
 inputs:
   role-to-assume:
     description: AWS IAM role to assume when running Terraform operations.
@@ -32,6 +33,7 @@ inputs:
     description: Directory where the Terraform configuration is stored.
     required: false
     default: .
+
 runs:
   using: composite
   steps:
