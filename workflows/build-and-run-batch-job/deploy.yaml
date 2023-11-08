@@ -1,22 +1,4 @@
-# Reusable workflow that builds a Docker image, pushes it to the GitHub
-# Container Registry, and then optionally uses that container image to run
-# an AWS Batch job.
-#
-# Requirements:
-#
-#   * A Dockerfile must be defined in the root of the repo whose workflow is
-#     calling this one.
-#   * A `deploy` environment must be configured in the calling repo. This
-#     environment is used to protect the `run` job, which must be approved by
-#     a core team member before it will run.
-#   * The calling workflow must grant the following permissions to the job
-#     that calls this workflow:
-#       * contents: read
-#       * id-token: write
-#       * packages: write
-#   * Various required inputs and secrets, documented below, must be passed in
-#     by the calling workflow.
-
+---
 name: build-and-run-batch-job
 
 on:
@@ -40,11 +22,6 @@ on:
         required: false
         type: string
         default: "4096"
-      terraform-working-directory:
-        description: Directory where the Terraform configuration is stored.
-        required: false
-        type: string
-        default: .
 
     secrets:
       AWS_IAM_ROLE_TO_ASSUME_ARN:
@@ -55,6 +32,7 @@ on:
 env:
   DOCKER_REGISTRY: ghcr.io
   DOCKER_IMAGE_NAME: ${{ github.repository }}
+  TERRAFORM_WORKING_DIRECTORY: ./workflows/build-and-run-batch-job/terraform/
 
 jobs:
   build:
@@ -132,18 +110,17 @@ jobs:
           batch-container-image-name: ${{ needs.build.outputs.image-name }}
           batch-job-definition-vcpu: ${{ inputs.vcpu }}
           batch-job-definition-memory: ${{ inputs.memory }}
-          repo: ${{ github.event.repository.name }}
           role-duration-seconds: ${{ inputs.role-duration-seconds}}
-          working-directory: ${{ inputs.terraform-working-directory }}
+          working-directory: ${{ env.TERRAFORM_WORKING_DIRECTORY }}
 
       - name: Validate Terraform config
         run: terraform validate
-        working-directory: ${{ inputs.terraform-working-directory }}
+        working-directory: ${{ env.TERRAFORM_WORKING_DIRECTORY }}
         shell: bash
 
       - name: Apply Terraform changes
         run: terraform apply -auto-approve
-        working-directory: ${{ inputs.terraform-working-directory }}
+        working-directory: ${{ env.TERRAFORM_WORKING_DIRECTORY }}
         shell: bash
 
       - name: Submit new Batch job
@@ -165,7 +142,7 @@ jobs:
           BATCH_JOB_ID=$(echo $BATCH_JOB_DETAILS | jq -r ".jobId")
           echo "batch-job-id=$BATCH_JOB_ID" >> "$GITHUB_OUTPUT"
         shell: bash
-        working-directory: ${{ inputs.terraform-working-directory }}
+        working-directory: ${{ env.TERRAFORM_WORKING_DIRECTORY }}
 
       - name: Wait for Batch job to start and print link to AWS logs
         run: ./scripts/poll_batch_job_status.sh "$BATCH_JOB_ID" startup
