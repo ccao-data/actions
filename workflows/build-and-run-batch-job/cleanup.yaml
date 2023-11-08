@@ -1,7 +1,7 @@
 ---
 name: cleanup-terraform
 
-on:
+"on":
   workflow_call:
     secrets:
       AWS_IAM_ROLE_TO_ASSUME_ARN:

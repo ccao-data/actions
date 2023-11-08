@@ -1,7 +1,7 @@
 ---
 name: build-and-run-batch-job
 
-on:
+"on":
   workflow_call:
     inputs:
       role-duration-seconds:
@@ -130,8 +130,10 @@ jobs:
           # the setup-terraform action, which adds extra context to
           # `terraform output` calls
           BATCH_JOB_NAME="$(terraform-bin output -raw batch_job_name)"
-          BATCH_JOB_DEFINITION="$(terraform-bin output -raw batch_job_definition_arn)"
           BATCH_JOB_QUEUE="$(terraform-bin output -raw batch_job_queue_arn)"
+          BATCH_JOB_DEFINITION="$(\
+            terraform-bin output -raw batch_job_definition_arn \
+          )"
 
           BATCH_JOB_DETAILS=$(\
             aws batch submit-job \
