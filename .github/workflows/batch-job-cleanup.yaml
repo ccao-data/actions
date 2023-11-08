@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Cleanup Terraform
-        uses: ./actions/setup-terraform
+        uses: ccao-data/actions/setup-terraform@jeancochrane/add-batch-and-terraform-workflows-and-actions
         with:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME_ARN }}
           aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
