@@ -9,15 +9,27 @@ name: batch-job-cleanup
       AWS_ACCOUNT_ID:
         required: true
 
+env:
+  ACTIONS_REF: jeancochrane/add-batch-and-terraform-workflows-and-actions
+  ACTIONS_PATH: ./actions
+  TERRAFORM_WORKING_DIRECTORY: ${{ env.ACTIONS_PATH }}/.github/workflows/batch-job-terraform/
+
 jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repo code
         uses: actions/checkout@v4
 
+      - name: Checkout workflow scripts
+        uses: actions/checkout@v4
+        with:
+          repository: ccao-data/actions
+          ref: ${{ env.ACTIONS_REF }}
+          path: ${{ env.ACTIONS_PATH }}
+
       - name: Cleanup Terraform
-        uses: ccao-data/actions/setup-terraform@jeancochrane/add-batch-and-terraform-workflows-and-actions
+        uses: ${{ env.ACTIONS_PATH }}/cleanup-terraform
         with:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME_ARN }}
           aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}

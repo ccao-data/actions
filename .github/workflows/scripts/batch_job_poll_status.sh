@@ -13,7 +13,7 @@
 #
 # Example usage:
 #
-#   scripts/poll_batch_job_status.sh 12345 startup
+#   batch_job_poll_status.sh 12345 startup
 set -euo pipefail
 
 BATCH_JOB_LOG_URL_PREFIX="https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:log-groups/log-group/%2Faws%2Fbatch%2Fjob/log-events"

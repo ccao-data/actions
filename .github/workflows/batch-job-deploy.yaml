@@ -32,7 +32,9 @@ name: batch-job-deploy
 env:
   DOCKER_REGISTRY: ghcr.io
   DOCKER_IMAGE_NAME: ${{ github.repository }}
-  TERRAFORM_WORKING_DIRECTORY: ./.github/workflows/batch-job-terraform/
+  ACTIONS_REF: jeancochrane/add-batch-and-terraform-workflows-and-actions
+  ACTIONS_PATH: ./actions
+  TERRAFORM_WORKING_DIRECTORY: ${{ env.ACTIONS_PATH }}/.github/workflows/batch-job-terraform/
 
 jobs:
   build:
@@ -40,7 +42,7 @@ jobs:
     outputs:
       image-name: ${{ steps.save-image-name.outputs.image-name }}
     steps:
-      - name: Checkout
+      - name: Checkout repo code
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
@@ -99,11 +101,18 @@ jobs:
     # Require manual approval to run this job
     environment: deploy
     steps:
-      - name: Checkout
+      - name: Checkout repo code
         uses: actions/checkout@v4
 
+      - name: Checkout workflow scripts
+        uses: actions/checkout@v4
+        with:
+          repository: ccao-data/actions
+          ref: ${{ env.ACTIONS_REF }}
+          path: ${{ env.ACTIONS_PATH }}
+
       - name: Setup Terraform
-        uses: ccao-data/actions/setup-terraform@jeancochrane/add-batch-and-terraform-workflows-and-actions
+        uses: ${{ env.ACTIONS_PATH }}/setup-terraform
         with:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME_ARN }}
           aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
@@ -147,13 +156,13 @@ jobs:
         working-directory: ${{ env.TERRAFORM_WORKING_DIRECTORY }}
 
       - name: Wait for Batch job to start and print link to AWS logs
-        run: ./scripts/poll_batch_job_status.sh "$BATCH_JOB_ID" startup
+        run: $ACTIONS_PATH/.github/workflows/scripts/batch_job_poll_status.sh "$BATCH_JOB_ID" startup
         shell: bash
         env:
           BATCH_JOB_ID: ${{ steps.submit-job.outputs.batch-job-id }}
 
       - name: Wait for Batch job to complete
-        run: ./scripts/poll_batch_job_status.sh "$BATCH_JOB_ID"
+        run: $ACTIONS_PATH/.github/workflows/scripts/batch_job_poll_status.sh "$BATCH_JOB_ID"
         shell: bash
         env:
           BATCH_JOB_ID: ${{ steps.submit-job.outputs.batch-job-id }}
