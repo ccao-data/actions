@@ -37,6 +37,9 @@ env:
 
 jobs:
   build:
+    # Don't run on closed PRs (required since the cleanup step will run on
+    # this event trigger)
+    if: ${{ ! (github.event_name == 'pull_request' && github.event.action == 'closed' )}}
     runs-on: ubuntu-latest
     outputs:
       image-name: ${{ steps.save-image-name.outputs.image-name }}
@@ -94,7 +97,7 @@ jobs:
   run:
     # Don't automatically run the model on push, since we prefer to use workflow
     # dispatch for prod runs instead
-    if: github.event_name != 'push'
+    if: ${{ github.event_name != 'push' && ! (github.event_name == 'pull_request' && github.event.action == 'closed') }}
     needs: [build]
     runs-on: ubuntu-latest
     # Require manual approval to run this job
@@ -165,3 +168,25 @@ jobs:
         shell: bash
         env:
           BATCH_JOB_ID: ${{ steps.submit-job.outputs.batch-job-id }}
+
+  cleanup:
+    # Only run on closed PRs, to destroy staging resources
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo code
+        uses: actions/checkout@v4
+
+      - name: Checkout workflow scripts
+        uses: actions/checkout@v4
+        with:
+          repository: ccao-data/actions
+          ref: ${{ env.ACTIONS_REF }}
+          path: ./actions/
+
+      - name: Cleanup Terraform
+        uses: ./actions/cleanup-terraform
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME_ARN }}
+          aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
+          working-directory: ./.github/workflows/batch-job-terraform/
