@@ -2,10 +2,11 @@
 
 GitHub Actions for CCAO Data projects.
 
-This repo also includes reusable workflows (stored in the `workflows` directory)
-and bash scripts to support them (stored in the `scripts` directory.)
+This repo also includes reusable workflows (stored in the `.github/workflows/`
+directory) and bash scripts to support them (stored in the
+`.github/workflow/scripts/` directory.)
 
-## Quick links
+# Quick links
 
 * [Actions](#actions)
   * [`setup-terraform`](#setup-terraform)
@@ -13,16 +14,16 @@ and bash scripts to support them (stored in the `scripts` directory.)
 * [Workflows](#workflows)
   * [`build-and-run-batch-job`](#build-and-run-batch-job)
 
-## Actions
+# Actions
 
 The following composite actions are available for use:
 
-### setup-terraform
+## setup-terraform
 
 Install and configure Terraform and AWS for the correct workspace (staging or
 prod).
 
-#### Requirements
+### Requirements
 
 * At least one Terraform (`*.tf`) config file must exist in the repo. The path
   to these files can be specified with the `working-directory` input variable
@@ -34,29 +35,29 @@ prod).
 * Various required inputs and secrets must be passed in by the calling workflow.
   See the [action file](./setup-terraform/action.yaml) for details.
 
-#### Sample usage
+### Sample usage
 
 See the `Setup Terraform` step in the `run` job in the
 [build-and-run-batch-job](./.github/workflows/build-and-run-batch-job.yaml)
 workflow.
 
-### cleanup-terraform
+## cleanup-terraform
 
 Delete all AWS resources managed by a Terraform configuration.
 
-#### Requirements
+### Requirements
 
 See the requirements for [`setup-terraform`](#setup-terraform).
 
-#### Sample usage
+### Sample usage
 
 See the sample usage for [`setup-terraform`](#setup-terraform).
 
-## Workflows
+# Workflows
 
 The following reusable workflows are available for use:
 
-### build-and-run-batch-job
+## build-and-run-batch-job
 
 Build a Docker image, push it to the GitHub Container Registry, and then
 optionally use that container image to run a job on AWS Batch.
@@ -68,7 +69,7 @@ jobs that don't need to be run on every commit during development.
 An optional cleanup step will run on the `pull_request.closed` event if the
 calling workflow is configured to run on that event as well. This step will
 delete all AWS resources provisioned by Terraform. No other steps will run
-on `pul_request.closed`.
+on `pull_request.closed`.
 
 The workflow is composed of three jobs:
 
@@ -83,11 +84,11 @@ The workflow is composed of three jobs:
   the `pull_request.closed` event, in which case neither `build` nor `run`
   will run.
 
-#### Requirements
+### Requirements
 
 * A Dockerfile must be defined in the root of the repo whose workflow is
   calling `build-and-run-batch-job`.
-* A `deploy` environment must be configured in the calling repo. This
+* An environment called `deploy` must be configured in the calling repo. This
   environment can be used to gate the `run` job behind approval.
 * If you would like the `cleanup` step to run, the calling workflow must be
   configured to run on the `pull_request.closed` event.
@@ -107,7 +108,7 @@ The workflow is composed of three jobs:
 * Various required inputs and secrets must be passed in by the calling workflow.
   See the [workflow file](./workflows/build-and-run-batch-job/deploy.yaml) for details.
 
-#### Sample usage
+### Sample usage
 
 See the `build-and-run-model` workflow in
 [model-res-avm](https://github.com/ccao-data/model-res-avm/blob/master/.github/workflows/build-and-run-model.yaml).
