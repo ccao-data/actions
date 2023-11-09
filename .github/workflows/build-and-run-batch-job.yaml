@@ -1,9 +1,20 @@
 ---
-name: batch-job-deploy
+name: build-and-run-batch-job
 
 "on":
   workflow_call:
     inputs:
+      ref:
+        description: >
+          The git ref for the workflow branch that is being requested. For
+          instance, if calling build-and-run-batch-job.yaml@v1, this variable
+          should be set to "v1". The default is "main". This seems repetitive,
+          but it's necessary to deal with the fact that reusable external
+          workflows currently do not have access to their ref:
+          https://github.com/actions/toolkit/issues/1264
+        required: false
+        type: string
+        default: main
       role-duration-seconds:
         description: How long IAM role used to auth with AWS can be valid.
         required: false
@@ -32,7 +43,6 @@ name: batch-job-deploy
 env:
   DOCKER_REGISTRY: ghcr.io
   DOCKER_IMAGE_NAME: ${{ github.repository }}
-  ACTIONS_REF: master  # Ref to pull reusable actions/workflows from
   # Directory where Terraform configurations are stored (this assumes that
   # the workflow jobs check out this repo's code into the ./actions path,
   # which is necessary in order to reference local files in a reusable workflow)
@@ -115,7 +125,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ccao-data/actions
-          ref: ${{ env.ACTIONS_REF }}
+          ref: ${{ inputs.ref }}
           path: ./actions/
 
       - name: Setup Terraform
@@ -190,7 +200,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ccao-data/actions
-          ref: ${{ env.ACTIONS_REF }}
+          ref: ${{ inputs.ref }}
           path: ./actions/
 
       - name: Cleanup Terraform
