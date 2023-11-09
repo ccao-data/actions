@@ -32,7 +32,10 @@ name: batch-job-deploy
 env:
   DOCKER_REGISTRY: ghcr.io
   DOCKER_IMAGE_NAME: ${{ github.repository }}
-  ACTIONS_REF: jeancochrane/add-batch-and-terraform-workflows-and-actions
+  ACTIONS_REF: master  # Ref to pull reusable actions/workflows from
+  # Directory where Terraform configurations are stored (this assumes that
+  # the workflow jobs check out this repo's code into the ./actions path,
+  # which is necessary in order to reference local files in a reusable workflow)
   TF_WORKDIR: ./actions/.github/workflows/build-and-run-batch-job-terraform/
 
 jobs:
