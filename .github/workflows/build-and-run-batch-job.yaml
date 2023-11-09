@@ -33,13 +33,13 @@ env:
   DOCKER_REGISTRY: ghcr.io
   DOCKER_IMAGE_NAME: ${{ github.repository }}
   ACTIONS_REF: jeancochrane/add-batch-and-terraform-workflows-and-actions
-  TERRAFORM_WORKING_DIRECTORY: ./actions/.github/workflows/build-and-run-batch-job-terraform/
+  TF_WORKDIR: ./actions/.github/workflows/build-and-run-batch-job-terraform/
 
 jobs:
   build:
     # Don't run on closed PRs (required since the cleanup step will run on
     # this event trigger)
-    if: ${{ ! (github.event_name == 'pull_request' && github.event.action == 'closed' )}}
+    if: github.event_name != 'pull_request' || github.event.action != 'closed'
     runs-on: ubuntu-latest
     outputs:
       image-name: ${{ steps.save-image-name.outputs.image-name }}
@@ -97,7 +97,9 @@ jobs:
   run:
     # Don't automatically run the model on push, since we prefer to use workflow
     # dispatch for prod runs instead
-    if: ${{ github.event_name != 'push' && ! (github.event_name == 'pull_request' && github.event.action == 'closed') }}
+    if: |
+      github.event_name != 'push' &&
+      ! (github.event_name == 'pull_request' && github.event.action == 'closed')
     needs: [build]
     runs-on: ubuntu-latest
     # Require manual approval to run this job
@@ -122,16 +124,16 @@ jobs:
           batch-job-definition-vcpu: ${{ inputs.vcpu }}
           batch-job-definition-memory: ${{ inputs.memory }}
           role-duration-seconds: ${{ inputs.role-duration-seconds}}
-          working-directory: ${{ env.TERRAFORM_WORKING_DIRECTORY }}
+          working-directory: ${{ env.TF_WORKDIR }}
 
       - name: Validate Terraform config
         run: terraform validate
-        working-directory: ${{ env.TERRAFORM_WORKING_DIRECTORY }}
+        working-directory: ${{ env.TF_WORKDIR }}
         shell: bash
 
       - name: Apply Terraform changes
         run: terraform apply -auto-approve
-        working-directory: ${{ env.TERRAFORM_WORKING_DIRECTORY }}
+        working-directory: ${{ env.TF_WORKDIR }}
         shell: bash
 
       - name: Submit new Batch job
@@ -155,23 +157,27 @@ jobs:
           BATCH_JOB_ID=$(echo $BATCH_JOB_DETAILS | jq -r ".jobId")
           echo "batch-job-id=$BATCH_JOB_ID" >> "$GITHUB_OUTPUT"
         shell: bash
-        working-directory: ${{ env.TERRAFORM_WORKING_DIRECTORY }}
+        working-directory: ${{ env.TF_WORKDIR }}
 
       - name: Wait for Batch job to start and print link to AWS logs
-        run: ./actions/.github/workflows/scripts/batch_job_poll_status.sh "$BATCH_JOB_ID" startup
+        run: |
+          ./actions/.github/workflows/scripts/batch_job_poll_status.sh \
+            "$BATCH_JOB_ID" startup
         shell: bash
         env:
           BATCH_JOB_ID: ${{ steps.submit-job.outputs.batch-job-id }}
 
       - name: Wait for Batch job to complete
-        run: ./actions/.github/workflows/scripts/batch_job_poll_status.sh "$BATCH_JOB_ID"
+        run: |
+          ./actions/.github/workflows/scripts/batch_job_poll_status.sh \
+            "$BATCH_JOB_ID"
         shell: bash
         env:
           BATCH_JOB_ID: ${{ steps.submit-job.outputs.batch-job-id }}
 
   cleanup:
     # Only run on closed PRs, to destroy staging resources
-    if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' }}
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo code
@@ -189,4 +195,4 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME_ARN }}
           aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
-          working-directory: ${{ env.TERRAFORM_WORKING_DIRECTORY }}
+          working-directory: ${{ env.TF_WORKDIR }}
