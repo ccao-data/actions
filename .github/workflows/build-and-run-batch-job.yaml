@@ -50,6 +50,10 @@ jobs:
       - name: Checkout repo code
         uses: actions/checkout@v4
 
+      - name: Print workflow metadata
+        run: echo "$GITHUB_WORKFLOW_REF"
+        shell: bash
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
