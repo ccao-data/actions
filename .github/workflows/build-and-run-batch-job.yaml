@@ -33,7 +33,7 @@ env:
   DOCKER_REGISTRY: ghcr.io
   DOCKER_IMAGE_NAME: ${{ github.repository }}
   ACTIONS_REF: jeancochrane/add-batch-and-terraform-workflows-and-actions
-  TERRAFORM_WORKING_DIRECTORY: ./actions/.github/workflows/batch-job-terraform/
+  TERRAFORM_WORKING_DIRECTORY: ./actions/.github/workflows/build-and-run-batch-job-terraform/
 
 jobs:
   build:
@@ -189,4 +189,4 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME_ARN }}
           aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
-          working-directory: ./.github/workflows/batch-job-terraform/
+          working-directory: ${{ env.TERRAFORM_WORKING_DIRECTORY }}
