@@ -11,8 +11,7 @@ and bash scripts to support them (stored in the `scripts` directory.)
   * [`setup-terraform`](#setup-terraform)
   * [`cleanup-terraform`](#cleanup-terraform)
 * [Workflows](#workflows)
-  * [`build-and-run-batch-job/deploy`](#build-and-run-batch-jobdeploy)
-  * [`build-and-run-batch-job/cleanup`](#build-and-run-batch-jobcleanup)
+  * [`build-and-run-batch-job`](#build-and-run-batch-job)
 
 ## Actions
 
@@ -38,7 +37,7 @@ prod).
 #### Sample usage
 
 See the `Setup Terraform` step in the `run` job in the
-[build-and-run-batch-job/deploy](./workflows/build-and-run-batch-job/deploy.yaml)
+[build-and-run-batch-job](./.github/workflows/build-and-run-batch-job.yaml)
 workflow.
 
 ### cleanup-terraform
@@ -57,7 +56,7 @@ See the sample usage for [`setup-terraform`](#setup-terraform).
 
 The following reusable workflows are available for use:
 
-### build-and-run-batch-job/deploy
+### build-and-run-batch-job
 
 Build a Docker image, push it to the GitHub Container Registry, and then
 optionally use that container image to run a job on AWS Batch.
@@ -66,12 +65,40 @@ The Batch job will be gated behind an environment called `deploy`, which can
 be configured to require approval before running. This is handy for intensive
 jobs that don't need to be run on every commit during development.
 
+An optional cleanup step will run on the `pull_request.closed` event if the
+calling workflow is configured to run on that event as well. This step will
+delete all AWS resources provisioned by Terraform. No other steps will run
+on `pul_request.closed`.
+
+The workflow is composed of three jobs:
+
+* `build`: Always runs, except on the `pull_request.closed` event. Builds a
+  Docker image and pushes it to GHCR.
+* `run`: Runs after `build` when the `deploy` environment is approved. Does not
+  run on `push` or `pull_request.closed` events. Provisions a Batch compute
+  environment, job queue, and job definition using the image built in the
+  `build` step using Terraform, and then kicks off a job using that job
+  definition. Waits for the job to complete before exiting.
+* `cleanup`: Deletes all AWS resources created by the workflow. Only runs on
+  the `pull_request.closed` event, in which case neither `build` nor `run`
+  will run.
+
 #### Requirements
 
 * A Dockerfile must be defined in the root of the repo whose workflow is
   calling `build-and-run-batch-job`.
 * A `deploy` environment must be configured in the calling repo. This
   environment can be used to gate the `run` job behind approval.
+* If you would like the `cleanup` step to run, the calling workflow must be
+  configured to run on the `pull_request.closed` event.
+* Various AWS VPC and IAM resources that are used across jobs are assumed to
+  already exist. These resources are defined as `data` entities in the Terraform
+  config for the workflow. In the future we could factor this out to make
+  these resource IDs configurable, but for now they are hardcoded to point to
+  the corresponding resources in the CCAO Data AWS organization. See the
+  [Terraform
+  config](./github/workflows/build-and-run-batch-job-terraform/main.tf)
+  for details.
 * The calling workflow must grant the following permissions to the job
   that calls this workflow:
     * `contents: read`
@@ -84,27 +111,3 @@ jobs that don't need to be run on every commit during development.
 
 See the `build-and-run-model` workflow in
 [model-res-avm](https://github.com/ccao-data/model-res-avm/blob/master/.github/workflows/build-and-run-model.yaml).
-
-### build-and-run-batch-job/cleanup
-
-Delete all AWS resources managed by the Terraform configuration for the
-`build-and-run-batch-job/deploy` workflow.
-
-This can be useful to call from the context of a workflow that runs on
-the `pull_request.closed` event in order to clean up any staging resources
-that were used for testing.
-
-#### Requirements
-
-* At least one Terraform (`*.tf`) config file must exist in the repo.
-* The calling workflow must grant the following permissions to the job that
-  calls this workflow:
-    * `contents: read`
-    * `id-token: write`
-* Various required inputs and secrets must be passed in by the calling workflow.
-  See the [workflow file](./workflows/build-and-run-batch-job/cleanup.yaml) for details.
-
-#### Sample usage
-
-See the `cleanup-model` workflow in
-[model-res-avm](https://github.com/ccao-data/model-res-avm/blob/master/.github/workflows/cleanup-model.yaml)
