@@ -80,9 +80,16 @@ runs:
                       tr '[:upper:]' '[:lower:]')"
           BATCH_JOB_NAME="ci_${WORKSPACE}_${GITHUB_REPOSITORY//\//-}"
 
-        elif [[ $GITHUB_REF_NAME == 'master' || \
-                $GITHUB_REF_NAME == 'main' ]]; then
-          echo "On master branch, setting terraform workspace to prod"
+        elif [[ "$GITHUB_REF_NAME" == "master" || \
+                "$GITHUB_REF_NAME" == "main" ]]; then
+          # Make sure the branch is protected, since it's common for only one
+          # of 'main' or 'master' to be protected in a given repo
+          if [[ "$GITHUB_REF_PROTECTED" != "true" ]]; then
+            echo "Cannot deploy to prod since branch $GITHUB_REF_NAME "
+            echo "is not protected"
+            exit 1
+          fi
+          echo "On main branch, setting terraform workspace to prod"
           WORKSPACE="prod"
           BATCH_JOB_NAME="${GITHUB_REPOSITORY//\//-}"
 
