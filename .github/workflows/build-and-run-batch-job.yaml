@@ -1,0 +1,216 @@
+name: build-and-run-batch-job
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: >
+          The git ref for the workflow branch that is being requested. For
+          instance, if calling build-and-run-batch-job.yaml@v1, this variable
+          should be set to "v1". The default is "main". This seems repetitive,
+          but it's necessary to deal with the fact that reusable external
+          workflows currently do not have access to their ref:
+          https://github.com/actions/toolkit/issues/1264
+        required: false
+        type: string
+        default: main
+      role-duration-seconds:
+        description: How long IAM role used to auth with AWS can be valid.
+        required: false
+        type: string
+        default: 3600
+      vcpu:
+        description: >
+          Count of cVPUs to provision for the container. Per AWS requirements,
+          must be formatted as a float, e.g. 1.0 for 1 vCPU. The minimum
+          is 1 vCPU and values must be specified in increments of 0.25.
+        required: false
+        type: string
+        default: "1.0"
+      memory:
+        description: Count of megabytes of RAM to provision for the container.
+        required: false
+        type: string
+        default: "4096"
+
+    secrets:
+      AWS_IAM_ROLE_TO_ASSUME_ARN:
+        required: true
+      AWS_ACCOUNT_ID:
+        required: true
+
+env:
+  DOCKER_REGISTRY: ghcr.io
+  DOCKER_IMAGE_NAME: ${{ github.repository }}
+  # Directory where Terraform configurations are stored (this assumes that
+  # the workflow jobs check out this repo's code into the ./actions path,
+  # which is necessary in order to reference local files in a reusable workflow)
+  TF_WORKDIR: ./actions/.github/workflows/build-and-run-batch-job-terraform/
+
+jobs:
+  build:
+    # Don't run on closed PRs (required since the cleanup step will run on
+    # this event trigger)
+    if: |
+      ${{
+        ! (
+          github.event.name == 'pull_request' &&
+          github.event.action == 'closed'
+        )
+      }}
+    runs-on: ubuntu-latest
+    outputs:
+      image-name: ${{ steps.save-image-name.outputs.image-name }}
+    steps:
+      - name: Checkout repo code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}
+          # Tag the following types of images:
+          #   * On a branch, tag with the branch name (e.g. `master`)
+          #   * On a PR, tag with the PR number (e.g. `pr-12`)
+          #   * On a tagged commit, tag with the git tag (e.g. `2023`)
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=ref,event=tag
+
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Fix incorrect container type sidebar display in GitHub Container
+          # Registry
+          provenance: false
+
+      - name: Save image name to output
+        id: save-image-name
+        run: |
+          IMAGE_NAME=$(echo "$METADATA" | jq -r '."image.name"')
+          echo "image-name=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
+        shell: bash
+        env:
+          METADATA: ${{ steps.build-and-push.outputs.metadata }}
+
+  run:
+    # Don't automatically run the model on push, since we prefer to use workflow
+    # dispatch for prod runs instead
+    if: |
+      github.event_name != 'push' &&
+      ! (github.event_name == 'pull_request' && github.event.action == 'closed')
+    needs: [build]
+    runs-on: ubuntu-latest
+    # Require manual approval to run this job
+    environment: deploy
+    steps:
+      - name: Checkout repo code
+        uses: actions/checkout@v4
+
+      - name: Checkout workflow scripts
+        uses: actions/checkout@v4
+        with:
+          repository: ccao-data/actions
+          ref: ${{ inputs.ref }}
+          path: ./actions/
+
+      - name: Setup Terraform
+        uses: ./actions/setup-terraform
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME_ARN }}
+          aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
+          batch-container-image-name: ${{ needs.build.outputs.image-name }}
+          batch-job-definition-vcpu: ${{ inputs.vcpu }}
+          batch-job-definition-memory: ${{ inputs.memory }}
+          role-duration-seconds: ${{ inputs.role-duration-seconds}}
+          working-directory: ${{ env.TF_WORKDIR }}
+
+      - name: Validate Terraform config
+        run: terraform validate
+        working-directory: ${{ env.TF_WORKDIR }}
+        shell: bash
+
+      - name: Apply Terraform changes
+        run: terraform apply -auto-approve
+        working-directory: ${{ env.TF_WORKDIR }}
+        shell: bash
+
+      - name: Submit new Batch job
+        id: submit-job
+        run: |
+          # Use terraform-bin to disable the wrapper script installed by
+          # the setup-terraform action, which adds extra context to
+          # `terraform output` calls
+          BATCH_JOB_NAME="$(terraform-bin output -raw batch_job_name)"
+          BATCH_JOB_QUEUE="$(terraform-bin output -raw batch_job_queue_arn)"
+          BATCH_JOB_DEFINITION="$(\
+            terraform-bin output -raw batch_job_definition_arn \
+          )"
+
+          BATCH_JOB_DETAILS=$(\
+            aws batch submit-job \
+              --job-name "$BATCH_JOB_NAME" \
+              --job-definition "$BATCH_JOB_DEFINITION" \
+              --job-queue "$BATCH_JOB_QUEUE" \
+          )
+          BATCH_JOB_ID=$(echo $BATCH_JOB_DETAILS | jq -r ".jobId")
+          echo "batch-job-id=$BATCH_JOB_ID" >> "$GITHUB_OUTPUT"
+        shell: bash
+        working-directory: ${{ env.TF_WORKDIR }}
+
+      - name: Wait for Batch job to start and print link to AWS logs
+        run: |
+          ./actions/.github/workflows/scripts/batch_job_poll_status.sh \
+            "$BATCH_JOB_ID" startup
+        shell: bash
+        env:
+          BATCH_JOB_ID: ${{ steps.submit-job.outputs.batch-job-id }}
+
+      - name: Wait for Batch job to complete
+        run: |
+          ./actions/.github/workflows/scripts/batch_job_poll_status.sh \
+            "$BATCH_JOB_ID"
+        shell: bash
+        env:
+          BATCH_JOB_ID: ${{ steps.submit-job.outputs.batch-job-id }}
+
+  cleanup:
+    # Only run on closed PRs, to destroy staging resources
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo code
+        uses: actions/checkout@v4
+
+      - name: Checkout workflow scripts
+        uses: actions/checkout@v4
+        with:
+          repository: ccao-data/actions
+          ref: ${{ inputs.ref }}
+          path: ./actions/
+
+      - name: Cleanup Terraform
+        uses: ./actions/cleanup-terraform
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME_ARN }}
+          aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
+          working-directory: ${{ env.TF_WORKDIR }}
