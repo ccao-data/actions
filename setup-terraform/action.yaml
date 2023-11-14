@@ -21,6 +21,14 @@ inputs:
   batch-job-definition-memory:
     description: Count of megabytes of RAM to provision for the container.
     required: true
+  batch-compute-environment-backend:
+    description: The type of the AWS Batch compute environment to provision.
+    required: false
+    type: choice
+    options:
+      - fargate
+      - ec2
+    default: fargate
   role-duration-seconds:
     description: How long the role specified by role-to-assume should be valid.
     required: false
@@ -103,6 +111,8 @@ runs:
           echo "batch_container_image_name = \"$BATCH_CONTAINER_IMAGE_NAME\"";
           echo "batch_job_definition_vcpu = \"$BATCH_JOB_DEFINITION_VCPU\"";
           echo "batch_job_definition_memory = \"$BATCH_JOB_DEFINITION_MEMORY\"";
+          echo "batch_compute_environment_backend =" \
+               "\"$BATCH_COMPUTE_ENVIRONMENT_BACKEND\"";
         } > "$TFVARS_FILE"
 
         echo "workspace=$WORKSPACE" >> "$GITHUB_OUTPUT"
@@ -113,6 +123,8 @@ runs:
         BATCH_CONTAINER_IMAGE_NAME: ${{ inputs.batch-container-image-name }}
         BATCH_JOB_DEFINITION_VCPU: ${{ inputs.batch-job-definition-vcpu }}
         BATCH_JOB_DEFINITION_MEMORY: ${{ inputs.batch-job-definition-memory }}
+        BATCH_COMPUTE_ENVIRONMENT_BACKEND: |
+          ${{ inputs.batch-compute-environment-backend}}
 
     - name: Select Terraform workspace
       run: terraform workspace select -or-create "$WORKSPACE"
