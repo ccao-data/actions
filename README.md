@@ -1,4 +1,4 @@
-# actions
+# Actions
 
 GitHub Actions for CCAO Data projects.
 
