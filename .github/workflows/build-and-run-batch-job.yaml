@@ -1,7 +1,6 @@
----
 name: build-and-run-batch-job
 
-"on":
+on:
   workflow_call:
     inputs:
       ref:
