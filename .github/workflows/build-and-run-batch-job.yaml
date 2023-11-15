@@ -51,13 +51,8 @@ jobs:
   build:
     # Don't run on closed PRs (required since the cleanup step will run on
     # this event trigger)
-    if: |
-      ${{
-        ! (
-          github.event.name == 'pull_request' &&
-          github.event.action == 'closed'
-        )
-      }}
+    # yamllint disable-line rule:line-length
+    if: ${{ ! ( github.event_name == 'pull_request' && github.event.action == 'closed') }}
     runs-on: ubuntu-latest
     outputs:
       image-name: ${{ steps.save-image-name.outputs.image-name }}
