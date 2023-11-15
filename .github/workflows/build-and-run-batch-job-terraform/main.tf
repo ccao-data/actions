@@ -78,6 +78,12 @@ variable "batch_compute_environment_backend" {
   }
 }
 
+locals {
+  # Convenience function for determining if GPU instances are enabled, since
+  # this logic may change in the future
+  gpu_enabled = var.batch_job_definition_gpu != ""
+}
+
 # Raise an error if GPU support is configured without an EC2 backend. This is
 # the recommended approach to variable validation per this thread:
 # https://github.com/hashicorp/terraform/issues/25609#issuecomment-1472119672
@@ -85,9 +91,10 @@ output "validate_batch_job_definition_gpu" {
   value = null
 
   precondition {
+    # This condition must evaluate to true, or else the error_message will
+    # be raised
     condition = (
-      var.batch_job_definition_gpu == "" ||
-      var.batch_compute_environment_backend == "ec2"
+      var.batch_compute_environment_backend == "ec2" || !local.gpu_enabled
     )
     error_message = "batch_compute_environment_backend must be 'ec2' to enable GPU, got '${var.batch_compute_environment_backend}'"
   }
@@ -188,7 +195,7 @@ resource "aws_batch_compute_environment" "ec2" {
     desired_vcpus       = 0
     max_vcpus           = 64
     instance_role       = data.aws_iam_instance_profile.ec2_service_role_for_ecs.arn
-    instance_type       = ["optimal"]
+    instance_type       = local.gpu_enabled ? ["g5"] : ["optimal"]
     security_group_ids  = [data.aws_security_group.outbound_https.id]
     subnets             = data.aws_subnets.default.ids
   }
@@ -283,7 +290,7 @@ resource "aws_batch_job_definition" "ec2" {
         type  = "MEMORY"
         value = var.batch_job_definition_memory
       },
-      var.batch_job_definition_gpu != "" ?
+      local.gpu_enabled ?
       [{
         type  = "GPU"
         value = var.batch_job_definition_gpu
