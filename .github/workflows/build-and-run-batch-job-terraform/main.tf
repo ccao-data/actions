@@ -52,11 +52,12 @@ variable "batch_job_definition_vcpu" {
   type = string
 }
 
-# How many GPUs should be provisioned for Batch jobs (note that this requires
-# EC2 as a backend, and will be ignored if Fargate is configured instead)
+# How many GPUs should be provisioned for Batch jobs. Note that this requires
+# EC2 as a backend, and will be ignored if Fargate is configured instead
 variable "batch_job_definition_gpu" {
   type    = string
-  default = null
+  # Since this is a string type, use an empty string to indicate a null
+  default = ""
 }
 
 # How much memory should be provisioned for Batch jobs
@@ -85,7 +86,7 @@ output "validate_batch_job_definition_gpu" {
 
   precondition {
     condition = (
-      var.batch_job_definition_gpu == null ||
+      var.batch_job_definition_gpu == "" ||
       var.batch_compute_environment_backend == "ec2"
     )
     error_message = "batch_compute_environment_backend must be 'ec2' to enable GPU, got '${var.batch_compute_environment_backend}'"
@@ -282,7 +283,7 @@ resource "aws_batch_job_definition" "ec2" {
         type  = "MEMORY"
         value = var.batch_job_definition_memory
       },
-      var.batch_job_definition_gpu != null ?
+      var.batch_job_definition_gpu != "" ?
       [{
         type  = "GPU"
         value = var.batch_job_definition_gpu

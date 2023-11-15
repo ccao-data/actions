@@ -32,10 +32,10 @@ on:
           Count of GPUs to provision for the container. Per AWS requirements,
           must be formatted as a float, e.g. 1.0 for 1 GPU.This parameter is
           only available when the backend is "ec2", otherwise Terraform will
-          raise an error.
+          raise an error. An empty string indicates a null value.
         required: false
         type: string
-        default: null
+        default: ""
       memory:
         description: Count of megabytes of RAM to provision for the container.
         required: false
