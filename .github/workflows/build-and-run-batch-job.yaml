@@ -27,6 +27,15 @@ on:
         required: false
         type: string
         default: "1.0"
+      gpu:
+        description: >
+          Count of GPUs to provision for the container. Per AWS requirements,
+          must be formatted as a float, e.g. 1.0 for 1 GPU.This parameter is
+          only available when the backend is "ec2", otherwise Terraform will
+          raise an error.
+        required: false
+        type: string
+        default: null
       memory:
         description: Count of megabytes of RAM to provision for the container.
         required: false
@@ -160,6 +169,7 @@ jobs:
           batch-job-definition-vcpu: ${{ inputs.vcpu }}
           batch-job-definition-memory: ${{ inputs.memory }}
           batch-compute-environment-backend: ${{ inputs.backend }}
+          batch-job-definition-gpu: ${{ inputs.gpu }}
           role-duration-seconds: ${{ inputs.role-duration-seconds}}
           working-directory: ${{ env.TF_WORKDIR }}
 

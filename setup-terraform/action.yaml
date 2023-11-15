@@ -18,6 +18,15 @@ inputs:
       must be formatted as a float, e.g. 1.0 for 1 vCPU. The minimum
       is 1 vCPU and values must be specified in increments of 0.25.
     required: true
+  batch-job-definition-gpu:
+    description: >
+      Count of GPUs to provision for the container. Per AWS requirements,
+      must be formatted as a float, e.g. 1.0 for 1 GPU.This parameter is
+      only available when the backend is "ec2", otherwise Terraform will
+      raise an error.
+    required: false
+    type: string
+    default: null
   batch-job-definition-memory:
     description: Count of megabytes of RAM to provision for the container.
     required: true
@@ -110,6 +119,7 @@ runs:
           echo "batch_job_name = \"$BATCH_JOB_NAME\"";
           echo "batch_container_image_name = \"$BATCH_CONTAINER_IMAGE_NAME\"";
           echo "batch_job_definition_vcpu = \"$BATCH_JOB_DEFINITION_VCPU\"";
+          echo "batch_job_definition_gpu = \"$BATCH_JOB_DEFINITION_GPU\"";
           echo "batch_job_definition_memory = \"$BATCH_JOB_DEFINITION_MEMORY\"";
           echo "batch_compute_environment_backend =" \
                "\"$BATCH_COMPUTE_ENVIRONMENT_BACKEND\"";
@@ -122,6 +132,7 @@ runs:
         TFVARS_FILE: ${{ inputs.tfvars-file }}
         BATCH_CONTAINER_IMAGE_NAME: ${{ inputs.batch-container-image-name }}
         BATCH_JOB_DEFINITION_VCPU: ${{ inputs.batch-job-definition-vcpu }}
+        BATCH_JOB_DEFINITION_GPU: ${{ inputs.batch-job-definition-gpu }}
         BATCH_JOB_DEFINITION_MEMORY: ${{ inputs.batch-job-definition-memory }}
         BATCH_COMPUTE_ENVIRONMENT_BACKEND: |
           ${{ inputs.batch-compute-environment-backend}}

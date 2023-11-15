@@ -52,6 +52,13 @@ variable "batch_job_definition_vcpu" {
   type = string
 }
 
+# How many GPUs should be provisioned for Batch jobs (note that this requires
+# EC2 as a backend, and will be ignored if Fargate is configured instead)
+variable "batch_job_definition_gpu" {
+  type    = string
+  default = null
+}
+
 # How much memory should be provisioned for Batch jobs
 variable "batch_job_definition_memory" {
   type = string
@@ -67,6 +74,21 @@ variable "batch_compute_environment_backend" {
   validation {
     condition     = contains(["fargate", "ec2"], var.batch_compute_environment_backend)
     error_message = "Allowed values for batch_compute_environment_backend are \"fargate\" or \"ec2\""
+  }
+}
+
+# Raise an error if GPU support is configured without an EC2 backend. This is
+# the recommended approach to variable validation per this thread:
+# https://github.com/hashicorp/terraform/issues/25609#issuecomment-1472119672
+output "validate_batch_job_definition_gpu" {
+  value = null
+
+  precondition {
+    condition = (
+      var.batch_job_definition_gpu == null ||
+      var.batch_compute_environment_backend == "ec2"
+    )
+    error_message = "batch_compute_environment_backend must be 'ec2' to enable GPU, got '${var.batch_compute_environment_backend}'"
   }
 }
 
@@ -249,7 +271,9 @@ resource "aws_batch_job_definition" "ec2" {
     logConfiguration = {
       logDriver = "awslogs"
     }
-    resourceRequirements = [
+    # Use flatten() so that we only add GPU if it's not null. Source for this
+    # approach: https://stackoverflow.com/a/70088628
+    resourceRequirements = flatten([
       {
         type  = "VCPU"
         value = var.batch_job_definition_vcpu
@@ -257,7 +281,10 @@ resource "aws_batch_job_definition" "ec2" {
       {
         type  = "MEMORY"
         value = var.batch_job_definition_memory
-      }
-    ]
+      },
+      var.batch_job_definition_gpu != null ?
+      [{ type = "GPU", value = var.batch_job_definition_gpu }] :
+      []
+    ])
   })
 }
