@@ -53,7 +53,7 @@ variable "batch_job_definition_vcpu" {
 }
 
 # How many GPUs should be provisioned for Batch jobs. Note that this requires
-# EC2 as a backend, and will be ignored if Fargate is configured instead
+# EC2 as a backend, and we will raise an error if Fargate is configured instead
 variable "batch_job_definition_gpu" {
   type = string
   # Since this is a string type, use an empty string to indicate a null
@@ -156,7 +156,6 @@ data "aws_iam_role" "ecs_task_execution_role" {
 data "aws_iam_role" "ecs_job_role" {
   name = "ccao-ecs-model-runner"
 }
-
 
 # Create a Batch compute environment to run containers. Compute environments
 # define the underlying ECS or EC2 resources that will be provisioned to

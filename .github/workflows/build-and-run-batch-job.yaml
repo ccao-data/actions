@@ -32,7 +32,7 @@ on:
       gpu:
         description: >
           Count of GPUs to provision for the container. Per AWS requirements,
-          must be formatted as an integer.This parameter is only available when
+          must be formatted as an integer. This parameter is only available when
           the backend is "ec2", otherwise Terraform will raise an error. An
           empty string indicates a null value, and is also the default.
         required: false
