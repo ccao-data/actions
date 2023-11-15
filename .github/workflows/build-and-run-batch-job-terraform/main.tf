@@ -55,7 +55,7 @@ variable "batch_job_definition_vcpu" {
 # How many GPUs should be provisioned for Batch jobs. Note that this requires
 # EC2 as a backend, and will be ignored if Fargate is configured instead
 variable "batch_job_definition_gpu" {
-  type    = string
+  type = string
   # Since this is a string type, use an empty string to indicate a null
   default = ""
 }
