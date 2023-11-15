@@ -22,7 +22,7 @@ BATCH_JOB_LOG_URL_PREFIX="https://us-east-1.console.aws.amazon.com/cloudwatch/ho
 # derive a timeout in second units. There is no equivalent timeout for running
 # jobs, because those timeouts can be set on the Batch level, whereas startup
 # timeouts are not controllable by Batch
-BATCH_JOB_POLL_STARTUP_MAX_RETRIES=60
+BATCH_JOB_POLL_STARTUP_MAX_RETRIES=10
 
 if [ -z ${1+x} ]; then
     echo "Missing Batch job ID"
