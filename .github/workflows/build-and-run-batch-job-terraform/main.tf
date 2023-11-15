@@ -132,7 +132,7 @@ data "aws_iam_role" "batch_service_role" {
 }
 
 # Retrieve the IAM role that EC2 uses to run ECS tasks (used by the EC2 backend)
-data "aws_iam_role" "ec2_service_role_for_ecs" {
+data "aws_iam_instance_profile" "ec2_service_role_for_ecs" {
   name = "AWSEC2ServiceRoleForECS"
 }
 
@@ -186,7 +186,7 @@ resource "aws_batch_compute_environment" "ec2" {
     min_vcpus           = 0
     desired_vcpus       = 0
     max_vcpus           = 64
-    instance_role       = data.aws_iam_role.ec2_service_role_for_ecs.arn
+    instance_role       = data.aws_iam_instance_profile.ec2_service_role_for_ecs.arn
     instance_type       = ["optimal"]
     security_group_ids  = [data.aws_security_group.outbound_https.id]
     subnets             = data.aws_subnets.default.ids
