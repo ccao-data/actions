@@ -283,7 +283,10 @@ resource "aws_batch_job_definition" "ec2" {
         value = var.batch_job_definition_memory
       },
       var.batch_job_definition_gpu != null ?
-      [{ type = "GPU", value = var.batch_job_definition_gpu }] :
+      [{
+        type  = "GPU"
+        value = var.batch_job_definition_gpu
+      }] :
       []
     ])
   })
