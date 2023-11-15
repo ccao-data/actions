@@ -14,16 +14,18 @@ inputs:
     required: true
   batch-job-definition-vcpu:
     description: >
-      Count of cVPUs to provision for the container. Per AWS requirements,
-      must be formatted as a float, e.g. 1.0 for 1 vCPU. The minimum
-      is 1 vCPU and values must be specified in increments of 0.25.
+      Count of vCPUs to provision for the container. Per AWS requirements,
+      this parameter must be formatted as a float in increments of 0.25 when
+      the backend is "fargate" (e.g. 1.0 for 1 vCPU), but it must be
+      formatted as an integer when the backend is "ec2" (e.g. 1 for 1 vCPU).
+      The minimum is 1 vCPU.
     required: true
   batch-job-definition-gpu:
     description: >
       Count of GPUs to provision for the container. Per AWS requirements,
-      must be formatted as a float, e.g. 1.0 for 1 GPU.This parameter is
-      only available when the backend is "ec2", otherwise Terraform will
-      raise an error. An empty string indicates a null value.
+      must be formatted as an integer.This parameter is only available when
+      the backend is "ec2", otherwise Terraform will raise an error. An
+      empty string indicates a null value, and is also the default.
     required: false
     type: string
     default: ""
@@ -31,7 +33,11 @@ inputs:
     description: Count of megabytes of RAM to provision for the container.
     required: true
   batch-compute-environment-backend:
-    description: The type of the AWS Batch compute environment to provision.
+    description: >
+      The type of AWS Batch compute environment to provision. Must
+      be one of "fargate" or "ec2". Fargate allows for provisioning
+      fractional amounts of vCPU and tends to start up jobs faster, but EC2
+      allows GPU instances to be configured using the `gpu` parameter.
     required: false
     type: choice
     options:
