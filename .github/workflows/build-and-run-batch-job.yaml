@@ -21,17 +21,40 @@ on:
         default: 3600
       vcpu:
         description: >
-          Count of cVPUs to provision for the container. Per AWS requirements,
-          must be formatted as a float, e.g. 1.0 for 1 vCPU. The minimum
-          is 1 vCPU and values must be specified in increments of 0.25.
+          Count of vCPUs to provision for the container. Per AWS requirements,
+          this parameter must be formatted as a float in increments of 0.25 when
+          the backend is "fargate" (e.g. 1.0 for 1 vCPU), but it must be
+          formatted as an integer when the backend is "ec2" (e.g. 1 for 1 vCPU).
+          The minimum is 1 vCPU.
         required: false
         type: string
         default: "1.0"
+      gpu:
+        description: >
+          Count of GPUs to provision for the container. Per AWS requirements,
+          must be formatted as an integer. This parameter is only available when
+          the backend is "ec2", otherwise Terraform will raise an error. An
+          empty string indicates a null value, and is also the default.
+        required: false
+        type: string
+        default: ""
       memory:
         description: Count of megabytes of RAM to provision for the container.
         required: false
         type: string
         default: "4096"
+      backend:
+        description: >
+          The type of AWS Batch compute environment to provision. Must
+          be one of "fargate" or "ec2". Fargate allows for provisioning
+          fractional amounts of vCPU and tends to start up jobs faster, but EC2
+          allows GPU instances to be configured using the `gpu` parameter.
+        required: false
+        # It would be nice if this were a `choice` type, but reusable workflows
+        # currently do not support that input type; instead, we perform
+        # validation in a step of the `build` job
+        type: string
+        default: fargate
 
     secrets:
       AWS_IAM_ROLE_TO_ASSUME_ARN:
@@ -57,6 +80,16 @@ jobs:
     outputs:
       image-name: ${{ steps.save-image-name.outputs.image-name }}
     steps:
+      - name: Validate input variables
+        run: |
+          if [[ "$BACKEND" != "fargate" && "$BACKEND" != "ec2" ]]; then
+            echo "backend must be one of 'fargate' or 'ec2', got $BACKEND"
+            exit 1
+          fi
+        shell: bash
+        env:
+          BACKEND: ${{ inputs.backend }}
+
       - name: Checkout repo code
         uses: actions/checkout@v4
 
@@ -136,6 +169,8 @@ jobs:
           batch-container-image-name: ${{ needs.build.outputs.image-name }}
           batch-job-definition-vcpu: ${{ inputs.vcpu }}
           batch-job-definition-memory: ${{ inputs.memory }}
+          batch-compute-environment-backend: ${{ inputs.backend }}
+          batch-job-definition-gpu: ${{ inputs.gpu }}
           role-duration-seconds: ${{ inputs.role-duration-seconds}}
           working-directory: ${{ env.TF_WORKDIR }}
 

@@ -14,13 +14,36 @@ inputs:
     required: true
   batch-job-definition-vcpu:
     description: >
-      Count of cVPUs to provision for the container. Per AWS requirements,
-      must be formatted as a float, e.g. 1.0 for 1 vCPU. The minimum
-      is 1 vCPU and values must be specified in increments of 0.25.
+      Count of vCPUs to provision for the container. Per AWS requirements,
+      this parameter must be formatted as a float in increments of 0.25 when
+      the backend is "fargate" (e.g. 1.0 for 1 vCPU), but it must be
+      formatted as an integer when the backend is "ec2" (e.g. 1 for 1 vCPU).
+      The minimum is 1 vCPU.
     required: true
+  batch-job-definition-gpu:
+    description: >
+      Count of GPUs to provision for the container. Per AWS requirements,
+      must be formatted as an integer. This parameter is only available when
+      the backend is "ec2", otherwise Terraform will raise an error. An
+      empty string indicates a null value, and is also the default.
+    required: false
+    type: string
+    default: ""
   batch-job-definition-memory:
     description: Count of megabytes of RAM to provision for the container.
     required: true
+  batch-compute-environment-backend:
+    description: >
+      The type of AWS Batch compute environment to provision. Must
+      be one of "fargate" or "ec2". Fargate allows for provisioning
+      fractional amounts of vCPU and tends to start up jobs faster, but EC2
+      allows GPU instances to be configured using the `gpu` parameter.
+    required: false
+    type: choice
+    options:
+      - fargate
+      - ec2
+    default: fargate
   role-duration-seconds:
     description: How long the role specified by role-to-assume should be valid.
     required: false
@@ -67,6 +90,7 @@ runs:
 
     - name: Set Terraform variables
       id: set-vars
+      # yamllint disable rule:line-length
       run: |
         # GITHUB_HEAD_REF is only set on pull_request events, so if it's
         # present, we must be in a PR context
@@ -102,17 +126,23 @@ runs:
           echo "batch_job_name = \"$BATCH_JOB_NAME\"";
           echo "batch_container_image_name = \"$BATCH_CONTAINER_IMAGE_NAME\"";
           echo "batch_job_definition_vcpu = \"$BATCH_JOB_DEFINITION_VCPU\"";
+          echo "batch_job_definition_gpu = \"$BATCH_JOB_DEFINITION_GPU\"";
           echo "batch_job_definition_memory = \"$BATCH_JOB_DEFINITION_MEMORY\"";
+          echo "batch_compute_environment_backend = \"$BATCH_COMPUTE_ENVIRONMENT_BACKEND\"";
         } > "$TFVARS_FILE"
 
         echo "workspace=$WORKSPACE" >> "$GITHUB_OUTPUT"
+      # yamllint enable rule:line-length
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       env:
         TFVARS_FILE: ${{ inputs.tfvars-file }}
         BATCH_CONTAINER_IMAGE_NAME: ${{ inputs.batch-container-image-name }}
         BATCH_JOB_DEFINITION_VCPU: ${{ inputs.batch-job-definition-vcpu }}
+        BATCH_JOB_DEFINITION_GPU: ${{ inputs.batch-job-definition-gpu }}
         BATCH_JOB_DEFINITION_MEMORY: ${{ inputs.batch-job-definition-memory }}
+        # yamllint disable-line rule:line-length
+        BATCH_COMPUTE_ENVIRONMENT_BACKEND: ${{ inputs.batch-compute-environment-backend}}
 
     - name: Select Terraform workspace
       run: terraform workspace select -or-create "$WORKSPACE"

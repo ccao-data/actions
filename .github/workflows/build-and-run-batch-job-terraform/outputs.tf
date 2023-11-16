@@ -2,14 +2,27 @@
 # attributes of resources created by the config or input values that were
 # passed into the config at build time
 
+locals {
+  batch_job_definition_arn = (
+    var.batch_compute_environment_backend == "fargate" ?
+    aws_batch_job_definition.fargate[0].arn :
+    aws_batch_job_definition.ec2[0].arn
+  )
+  batch_job_queue_arn = (
+    var.batch_compute_environment_backend == "fargate" ?
+    aws_batch_job_queue.fargate[0].arn :
+    aws_batch_job_queue.ec2[0].arn
+  )
+}
+
 output "batch_job_definition_arn" {
   description = "ARN of the Batch job definition"
-  value       = aws_batch_job_definition.main.arn
+  value       = local.batch_job_definition_arn
 }
 
 output "batch_job_queue_arn" {
   description = "ARN of the Batch job queue"
-  value       = aws_batch_job_queue.main.arn
+  value       = local.batch_job_queue_arn
 }
 
 output "batch_job_name" {
