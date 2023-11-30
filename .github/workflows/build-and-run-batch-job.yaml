@@ -55,20 +55,15 @@ on:
         # validation in a step of the `build` job
         type: string
         default: fargate
-      container-env-vars:
-        description: >
-          A newline-separated string of environment variables to set in the
-          container that runs the Batch job. These variables will be masked in
-          GitHub Actions output to ensure they are never printed.
-        required: false
-        type: string
-        default: ""
 
     secrets:
       AWS_IAM_ROLE_TO_ASSUME_ARN:
         required: true
       AWS_ACCOUNT_ID:
         required: true
+      CONTAINER_ENV_VARS:
+        required: false
+        default: ""
 
 env:
   DOCKER_REGISTRY: ghcr.io
@@ -173,9 +168,9 @@ jobs:
         id: parse-env-vars
         run: |
           # Use $'' to encapsulate string in order to preserve newlines
-          ENV_VARS=$'${{ inputs.container-env-vars }}'
+          ENV_VARS=$'${{ secrets.CONTAINER_ENV_VARS }}'
           if [ -z "$ENV_VARS" ]; then
-            echo "container-env-vars is not defined; skipping"
+            echo "CONTAINER_ENV_VARS is not defined; skipping"
             echo "environment=[]" >> "$GITHUB_OUTPUT"
           else
             declare -a OUTPUT_ARRAY
@@ -183,7 +178,7 @@ jobs:
               # Our method of iterating the newline-delimited string can
               # introduce empty lines, so we need to be sure to filter them out
               if [ -z "$line" ]; then
-                echo "Encountered empty line in container-env-vars; skipping"
+                echo "Encountered empty line in CONTAINER_ENV_VARS; skipping"
               else
                 VAR_ARRAY=(${line//=/ })
                 VAR_KEY=${VAR_ARRAY[0]}
