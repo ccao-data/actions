@@ -198,12 +198,6 @@ jobs:
           fi
         shell: bash
 
-      - name: Print output and exit early to test container-env-vars
-        run: |
-          echo "${{ steps.parse-env-vars.outputs.environment}}"
-          exit 1
-        shell: bash
-
       - name: Setup Terraform
         uses: ./actions/setup-terraform
         with:
