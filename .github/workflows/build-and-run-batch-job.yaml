@@ -63,7 +63,6 @@ on:
         required: true
       CONTAINER_ENV_VARS:
         required: false
-        default: ""
 
 env:
   DOCKER_REGISTRY: ghcr.io
