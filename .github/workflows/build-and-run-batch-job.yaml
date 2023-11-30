@@ -55,6 +55,14 @@ on:
         # validation in a step of the `build` job
         type: string
         default: fargate
+      container-env-vars:
+        description: >
+          A newline-separated string of environment variables to set in the
+          container that runs the Batch job. These variables will be masked in
+          GitHub Actions output to ensure they are never printed.
+        required: false
+        type: string
+        default: ""
 
     secrets:
       AWS_IAM_ROLE_TO_ASSUME_ARN:
@@ -161,6 +169,35 @@ jobs:
           ref: ${{ inputs.ref }}
           path: ./actions/
 
+      - name: Parse and mask container env vars
+        id: parse-env-vars
+        run: |
+          # Use $'' to encapsulate string in order to preserve newlines
+          ENV_VARS=$'${{ inputs.container-env-vars }}'
+          if [ -z "$ENV_VARS" ]; then
+            echo "container-env-vars is not defined; skipping"
+            echo "environment=[]" >> "$GITHUB_OUTPUT"
+          else
+            declare -a OUTPUT_ARRAY
+            while IFS= read -r line; do
+              VAR_ARRAY=(${line//=/ })
+              VAR_KEY=${VAR_ARRAY[0]}
+              VAR_VAL=${VAR_ARRAY[1]}
+              # Env vars are often sensitive, so mask the value
+              echo "::add-mask::$VAR_VAL"
+              # Transform the var into the key/val JSON format that AWS expects
+              OUTPUT_ARRAY+=("{\"name\":\"${VAR_KEY}\",\"value\":\"${VAR_VAL}\"}")
+            done <<< "$ENV_VARS"
+            echo "environment=[$(IFS=, ; echo "${OUTPUT_ARRAY[*]}")]" >> "$GITHUB_OUTPUT"
+          fi
+        shell: bash
+
+      - name: Print output and exit early to test container-env-vars
+        run: |
+          echo "${{ steps.parse-env-vars.outputs.environment}}"
+          exit 1
+        shell: bash
+
       - name: Setup Terraform
         uses: ./actions/setup-terraform
         with:
@@ -196,16 +233,25 @@ jobs:
             terraform-bin output -raw batch_job_definition_arn \
           )"
 
+          if [ -z "$BATCH_JOB_ENVIRONMENT" ]; then
+            BATCH_JOB_CONTAINER_OVERRIDES="{}"
+          else
+            BATCH_JOB_CONTAINER_OVERRIDES="{\"environment\":${BATCH_JOB_ENVIRONMENT}}"
+          fi
+
           BATCH_JOB_DETAILS=$(\
             aws batch submit-job \
               --job-name "$BATCH_JOB_NAME" \
               --job-definition "$BATCH_JOB_DEFINITION" \
               --job-queue "$BATCH_JOB_QUEUE" \
+              --container-overrides "$BATCH_JOB_CONTAINER_OVERRIDES"
           )
           BATCH_JOB_ID=$(echo $BATCH_JOB_DETAILS | jq -r ".jobId")
           echo "batch-job-id=$BATCH_JOB_ID" >> "$GITHUB_OUTPUT"
         shell: bash
         working-directory: ${{ env.TF_WORKDIR }}
+        env:
+          BATCH_JOB_ENVIRONMENT: ${{ steps.parse-env-vars.outputs.environment }}
 
       - name: Wait for Batch job to start and print link to AWS logs
         run: |
