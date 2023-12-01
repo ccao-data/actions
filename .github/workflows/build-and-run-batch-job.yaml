@@ -174,6 +174,7 @@ jobs:
           ref: ${{ inputs.ref }}
           path: ./actions/
 
+      # yamllint disable rule:line-length
       - name: Parse and mask container env vars
         id: parse-env-vars
         run: |
@@ -202,6 +203,7 @@ jobs:
             echo "environment=[$(IFS=, ; echo "${OUTPUT_ARRAY[*]}")]" >> "$GITHUB_OUTPUT"
           fi
         shell: bash
+      # yamllint enable rule:line-length
 
       - name: Setup Terraform
         uses: ./actions/setup-terraform
