@@ -96,13 +96,13 @@ runs:
         # present, we must be in a PR context
         if [ -n "$GITHUB_HEAD_REF" ]; then
           echo "On pull request branch, setting terraform workspace to CI"
-          # Replace slashes and underscores with hyphens in the workspace name
+          # Replace special characters with hyphens in the workspace name
           # and force it to lowercase, since we use it to name resources and
           # we want to follow a consistent naming scheme
           WORKSPACE="$(echo $GITHUB_HEAD_REF | \
-                      sed -e 's/\//-/g' -e 's/_/-/g' | \
+                      sed -e 's/\//-/g' -e 's/_/-/g' -e 's/\./-/g' | \
                       tr '[:upper:]' '[:lower:]')"
-          BATCH_JOB_NAME="ci_${WORKSPACE}_${GITHUB_REPOSITORY//\//-}"
+          BATCH_JOB_NAME="z_ci_${WORKSPACE}_${GITHUB_REPOSITORY//\//-}"
 
         elif [[ "$GITHUB_REF_NAME" == "master" || \
                 "$GITHUB_REF_NAME" == "main" ]]; then

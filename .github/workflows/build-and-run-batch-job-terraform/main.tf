@@ -82,6 +82,12 @@ locals {
   # Convenience function for determining if GPU instances are enabled, since
   # this logic may change in the future
   gpu_enabled = var.batch_job_definition_gpu != ""
+  # In a CI environment, the job name is automatically generated based on the
+  # branch name, so make sure it meets Batch naming requirements. We expect
+  # that the setup-terraform action will have already removed special
+  # characters, so here we just need to truncate the job name (all Batch
+  # resource names must be a max of 128 characters long)
+  batch_job_name = substr(var.batch_job_name, 0, 128)
 }
 
 # Raise an error if GPU support is configured without an EC2 backend. This is
@@ -164,7 +170,7 @@ data "aws_iam_role" "ecs_job_role" {
 resource "aws_batch_compute_environment" "fargate" {
   # Only create this resource if the Fargate backend is enabled
   count                    = var.batch_compute_environment_backend == "fargate" ? 1 : 0
-  compute_environment_name = var.batch_job_name
+  compute_environment_name = local.batch_job_name
   service_role             = data.aws_iam_role.batch_service_role.arn
   state                    = "ENABLED"
   type                     = "MANAGED"
@@ -181,7 +187,7 @@ resource "aws_batch_compute_environment" "fargate" {
 resource "aws_batch_compute_environment" "ec2" {
   # Only create this resource if the EC2 backend is enabled
   count                    = var.batch_compute_environment_backend == "ec2" ? 1 : 0
-  compute_environment_name = var.batch_job_name
+  compute_environment_name = local.batch_job_name
   service_role             = data.aws_iam_role.batch_service_role.arn
   state                    = "ENABLED"
   type                     = "MANAGED"
@@ -206,7 +212,7 @@ resource "aws_batch_compute_environment" "ec2" {
 # https://docs.aws.amazon.com/batch/latest/userguide/job_queues.html
 resource "aws_batch_job_queue" "fargate" {
   count                = var.batch_compute_environment_backend == "fargate" ? 1 : 0
-  name                 = var.batch_job_name
+  name                 = local.batch_job_name
   compute_environments = [aws_batch_compute_environment.fargate[0].arn]
   priority             = 0
   state                = "ENABLED"
@@ -214,7 +220,7 @@ resource "aws_batch_job_queue" "fargate" {
 
 resource "aws_batch_job_queue" "ec2" {
   count                = var.batch_compute_environment_backend == "ec2" ? 1 : 0
-  name                 = var.batch_job_name
+  name                 = local.batch_job_name
   compute_environments = [aws_batch_compute_environment.ec2[0].arn]
   priority             = 0
   state                = "ENABLED"
@@ -231,7 +237,7 @@ resource "aws_batch_job_queue" "ec2" {
 # workflow that provisions these resources
 resource "aws_batch_job_definition" "fargate" {
   count                 = var.batch_compute_environment_backend == "fargate" ? 1 : 0
-  name                  = var.batch_job_name
+  name                  = local.batch_job_name
   platform_capabilities = ["FARGATE"]
   type                  = "container"
 
@@ -267,7 +273,7 @@ resource "aws_batch_job_definition" "fargate" {
 
 resource "aws_batch_job_definition" "ec2" {
   count                 = var.batch_compute_environment_backend == "ec2" ? 1 : 0
-  name                  = var.batch_job_name
+  name                  = local.batch_job_name
   platform_capabilities = ["EC2"]
   type                  = "container"
 
