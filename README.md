@@ -62,7 +62,8 @@ The following reusable workflows are available for use:
 Build a Docker image, push it to the GitHub Container Registry, and then
 optionally use that container image to run a job on AWS Batch.
 
-The Batch job will be gated behind an environment called `deploy`, which can
+The Batch job will only run when the workflow is manually dispatched from the
+GitHub UI. Jobs are gated behind an environment called `deploy`, which can
 be configured to require approval before running. This is handy for intensive
 jobs that don't need to be run on every commit during development.
 
@@ -75,8 +76,8 @@ The workflow is composed of three jobs:
 
 * `build`: Always runs, except on the `pull_request.closed` event. Builds a
   Docker image and pushes it to GHCR.
-* `run`: Runs after `build` when the `deploy` environment is approved. Does not
-  run on `push` or `pull_request.closed` events. Provisions a Batch compute
+* `run`: Runs after `build` only when manually dispatched and when the
+  `deploy` environment is approved. Provisions a Batch compute
   environment, job queue, and job definition using the image built in the
   `build` step using Terraform, and then kicks off a job using that job
   definition. Waits for the job to complete before exiting.

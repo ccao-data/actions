@@ -154,11 +154,9 @@ jobs:
           METADATA: ${{ steps.build-and-push.outputs.metadata }}
 
   run:
-    # Don't automatically run the model on push, since we prefer to use workflow
-    # dispatch for prod runs instead
-    if: |
-      github.event_name != 'push' &&
-      ! (github.event_name == 'pull_request' && github.event.action == 'closed')
+    # Only deploy the model to Batch when it's manually dispatched. This cuts
+    # down on notifications and reduces the chance of saving useless models
+    if: github.event_name == 'workflow_dispatch'
     needs: [build]
     runs-on: ubuntu-latest
     # Require manual approval to run this job
