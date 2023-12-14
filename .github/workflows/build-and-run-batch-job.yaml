@@ -189,9 +189,9 @@ jobs:
               if [ -z "$line" ]; then
                 echo "Encountered empty line in CONTAINER_ENV_VARS; skipping"
               else
-                VAR_ARRAY=(${line//=/ })
-                VAR_KEY=${VAR_ARRAY[0]}
-                VAR_VAL=${VAR_ARRAY[1]}
+                # Parse env vars into key/value spliting on equal
+                VAR_KEY=$(echo "$line" | cut -d '=' -f 1)
+                VAR_VAL=$(echo "$line" | cut -d '=' -f 2-)
                 # Env vars are often sensitive, so mask the value
                 echo "::add-mask::$VAR_VAL"
                 # Transform the var into the key/val JSON format that AWS expects
