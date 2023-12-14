@@ -104,6 +104,18 @@ runs:
                       tr '[:upper:]' '[:lower:]')"
           BATCH_JOB_NAME="z_ci_${WORKSPACE}_${GITHUB_REPOSITORY//\//-}"
 
+        elif [[ "$GITHUB_REF_NAME" != "master" || \
+                "$GITHUB_REF_NAME" != "main" ]] && \
+             [[ "$GITHUB_EVENT_NAME" == 'workflow_dispatch' ]]; then
+          # Run for workflows dispatched using a pull request branch
+          echo "Manually dispatched from pull request branch, "
+          echo "setting terraform workspace to CI"
+
+          WORKSPACE="$(echo $GITHUB_REF_NAME | \
+                      sed -e 's/\//-/g' -e 's/_/-/g' -e 's/\./-/g' | \
+                      tr '[:upper:]' '[:lower:]')"
+          BATCH_JOB_NAME="z_ci_${WORKSPACE}_${GITHUB_REPOSITORY//\//-}"
+
         elif [[ "$GITHUB_REF_NAME" == "master" || \
                 "$GITHUB_REF_NAME" == "main" ]]; then
           # Make sure the branch is protected, since it's common for only one
