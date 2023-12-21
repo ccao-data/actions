@@ -178,7 +178,7 @@ resource "aws_batch_compute_environment" "fargate" {
   compute_resources {
     type               = "FARGATE"
     min_vcpus          = 0
-    max_vcpus          = 64 # Max across all jobs, not within one job
+    max_vcpus          = 128 # Max across all jobs, not within one job
     security_group_ids = [data.aws_security_group.outbound_https.id]
     subnets            = data.aws_subnets.default.ids
   }
@@ -198,7 +198,7 @@ resource "aws_batch_compute_environment" "ec2" {
     bid_percentage      = 0
     min_vcpus           = 0
     desired_vcpus       = 0
-    max_vcpus           = 64
+    max_vcpus           = 128
     instance_role       = data.aws_iam_instance_profile.ec2_service_role_for_ecs.arn
     instance_type       = local.gpu_enabled ? ["g5"] : ["optimal"]
     security_group_ids  = [data.aws_security_group.outbound_https.id]
