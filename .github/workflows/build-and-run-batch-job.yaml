@@ -55,6 +55,16 @@ on:
         # validation in a step of the `build` job
         type: string
         default: fargate
+      poll_for_status:
+        description: >
+          Whether to poll the Batch job status once it starts up. It can be
+          useful to disable polling if the job implements its own
+          status reporting in a third-party system, or if the job runtime
+          exceeds the GitHub workflow timeout of 6 hours.
+        required: false
+        type: boolean
+        default: true
+
 
     secrets:
       # The ARN for the IAM role that the workflow will assume in order to make
@@ -267,6 +277,7 @@ jobs:
           BATCH_JOB_ID: ${{ steps.submit-job.outputs.batch-job-id }}
 
       - name: Wait for Batch job to complete
+        if: ${{ inputs.poll_for_status == true }}
         run: |
           ./actions/.github/workflows/scripts/batch_job_poll_status.sh \
             "$BATCH_JOB_ID"
@@ -275,8 +286,9 @@ jobs:
           BATCH_JOB_ID: ${{ steps.submit-job.outputs.batch-job-id }}
 
   cleanup:
-    # Only run on closed PRs, to destroy staging resources
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    # Only run on closed PRs or branches, to destroy staging resources
+    # yamllint disable-line rule:line-length
+    if: (github.event_name == 'pull_request' && github.event.action == 'closed') || (github.event_name == 'delete' && github.event.ref_type == 'branch')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo code
