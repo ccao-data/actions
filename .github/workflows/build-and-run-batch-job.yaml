@@ -290,6 +290,10 @@ jobs:
           ref: ${{ inputs.ref }}
           path: ./actions/
 
+      - name: Exit early for testing
+        run: exit 1
+        shell: bash
+
       - name: Cleanup Terraform
         uses: ./actions/cleanup-terraform
         with:
