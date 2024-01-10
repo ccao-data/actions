@@ -277,7 +277,7 @@ jobs:
           BATCH_JOB_ID: ${{ steps.submit-job.outputs.batch-job-id }}
 
       - name: Wait for Batch job to complete
-        if: ${{ inputs.poll_for_status == 'true' }}
+        if: ${{ inputs.poll_for_status == true }}
         run: |
           ./actions/.github/workflows/scripts/batch_job_poll_status.sh \
             "$BATCH_JOB_ID"
