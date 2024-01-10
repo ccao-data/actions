@@ -286,9 +286,9 @@ jobs:
           BATCH_JOB_ID: ${{ steps.submit-job.outputs.batch-job-id }}
 
   cleanup:
-    # Only run on closed PRs or branches, to destroy staging resources
+    # Only run on closed PRs, to destroy staging resources
     # yamllint disable-line rule:line-length
-    if: (github.event_name == 'pull_request' && github.event.action == 'closed') || (github.event_name == 'delete' && github.event.ref_type == 'branch')
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo code
