@@ -98,7 +98,7 @@ jobs:
     # Don't run on closed PRs (required since the cleanup step will run on
     # this event trigger)
     # yamllint disable-line rule:line-length
-    if: ${{ ! ( github.event_name == 'pull_request' && github.event.action == 'closed') }}
+    if: ${{ ! (github.event_name == 'delete' && github.event.ref_type == 'branch') }}
     runs-on: ubuntu-latest
     outputs:
       image-name: ${{ steps.save-image-name.outputs.image-name }}
@@ -286,9 +286,9 @@ jobs:
           BATCH_JOB_ID: ${{ steps.submit-job.outputs.batch-job-id }}
 
   cleanup:
-    # Only run on closed PRs or branches, to destroy staging resources
+    # Only run on deleted branches, to destroy staging resources
     # yamllint disable-line rule:line-length
-    if: (github.event_name == 'pull_request' && github.event.action == 'closed') || (github.event_name == 'delete' && github.event.ref_type == 'branch')
+    if: github.event_name == 'delete' && github.event.ref_type == 'branch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo code

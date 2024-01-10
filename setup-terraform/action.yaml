@@ -92,17 +92,26 @@ runs:
       id: set-vars
       # yamllint disable rule:line-length
       run: |
+        get_ci_workspace() {
+          # Function to turn a git ref into a Terraform CI workspace.
+          # Replace special characters with hyphens in the workspace name
+          # and force it to lowercase, since we use it to name resources and
+          # we want to follow a consistent naming scheme
+          echo "$(echo "$1" | \
+                sed -e 's/\//-/g' -e 's/_/-/g' -e 's/\./-/g' | \
+                tr '[:upper:]' '[:lower:]')"
+        }
+        get_ci_batch_job_name() {
+          # Function to turn a git ref into a Batch job name
+          workspace="$(get_ci_workspace "$1")"
+          echo "z_ci_${workspace}_${GITHUB_REPOSITORY//\//-}"
+        }
         # GITHUB_HEAD_REF is only set on pull_request events, so if it's
         # present, we must be in a PR context
         if [ -n "$GITHUB_HEAD_REF" ]; then
           echo "On pull request branch, setting terraform workspace to CI"
-          # Replace special characters with hyphens in the workspace name
-          # and force it to lowercase, since we use it to name resources and
-          # we want to follow a consistent naming scheme
-          WORKSPACE="$(echo $GITHUB_HEAD_REF | \
-                      sed -e 's/\//-/g' -e 's/_/-/g' -e 's/\./-/g' | \
-                      tr '[:upper:]' '[:lower:]')"
-          BATCH_JOB_NAME="z_ci_${WORKSPACE}_${GITHUB_REPOSITORY//\//-}"
+          WORKSPACE="$(get_ci_workspace "$GITHUB_HEAD_REF")"
+          BATCH_JOB_NAME="$(get_ci_batch_job_name "$GITHUB_HEAD_REF")"
 
         elif [[ "$GITHUB_REF_NAME" != "master" && \
                 "$GITHUB_REF_NAME" != "main" && \
@@ -110,11 +119,16 @@ runs:
           # Run for workflows dispatched using a pull request branch
           echo "Manually dispatched from pull request branch, "
           echo "setting terraform workspace to CI"
+          WORKSPACE="$(get_ci_workspace "$GITHUB_REF_NAME")"
+          BATCH_JOB_NAME="$(get_ci_batch_job_name "$GITHUB_REF_NAME")"
 
-          WORKSPACE="$(echo $GITHUB_REF_NAME | \
-                      sed -e 's/\//-/g' -e 's/_/-/g' -e 's/\./-/g' | \
-                      tr '[:upper:]' '[:lower:]')"
-          BATCH_JOB_NAME="z_ci_${WORKSPACE}_${GITHUB_REPOSITORY//\//-}"
+        elif [[ "$GITHUB_EVENT_NAME" == "delete" && \
+              "$GITHUB_EVENT_REF_TYPE" == "branch" ]]; then
+          # Catch branch delete events manually, since they run on the main
+          # branch
+          echo "On deleted branch, setting terraform workspace to CI"
+          WORKSPACE="$(get_ci_workspace "$GITHUB_EVENT_REF")"
+          BATCH_JOB_NAME="$(get_ci_batch_job_name "$GITHUB_EVENT_REF")"
 
         elif [[ "$GITHUB_REF_NAME" == "master" || \
                 "$GITHUB_REF_NAME" == "main" ]]; then
@@ -144,6 +158,7 @@ runs:
         } > "$TFVARS_FILE"
 
         echo "workspace=$WORKSPACE" >> "$GITHUB_OUTPUT"
+        exit 1
       # yamllint enable rule:line-length
       shell: bash
       working-directory: ${{ inputs.working-directory }}
