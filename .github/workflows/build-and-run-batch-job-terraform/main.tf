@@ -199,7 +199,7 @@ resource "aws_batch_compute_environment" "ec2" {
     min_vcpus           = 0
     max_vcpus           = 128
     instance_role       = data.aws_iam_instance_profile.ec2_service_role_for_ecs.arn
-    instance_type       = local.gpu_enabled ? ["g5"] : ["optimal"]
+    instance_type       = local.gpu_enabled ? ["g5"] : ["c5"]
     security_group_ids  = [data.aws_security_group.outbound_https.id]
     subnets             = data.aws_subnets.default.ids
   }
