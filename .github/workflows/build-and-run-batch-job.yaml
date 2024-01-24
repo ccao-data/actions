@@ -55,6 +55,17 @@ on:
         # validation in a step of the `build` job
         type: string
         default: fargate
+      container_env_vars:
+        description: |
+          A newline-delimited list of key-value pairs representing environment
+          variables that will be set in the Batch job container. Example:
+
+          CONTAINER_ENV_VARS: |
+            FOO=foo
+            BAR=bar
+        required: false
+        type: string
+        default: ""
       poll_for_status:
         description: >
           Whether to poll the Batch job status once it starts up. It can be
@@ -76,12 +87,14 @@ on:
       # workflow never accidentally logs it
       AWS_ACCOUNT_ID:
         required: true
-      # A newline-delimited list of key-value pairs representing environment
-      # variables that will be set in the Batch job container. Example:
+      # A version of the container_env_vars input variable for secret values.
+      # Values will be masked during parsing using the GitHub Actions add-mask
+      # function such that they are never printed to the logs under any
+      # circumstances. Example:
       #
       # CONTAINER_ENV_VARS: |
-      #   FOO=foo
-      #   BAR=${{ secrets.bar }}
+      #   FOO=${{ secrets.FOO }}
+      #   BAR=${{ secrets.BAR }}
       CONTAINER_ENV_VARS:
         required: false
 
@@ -187,32 +200,51 @@ jobs:
         id: parse-env-vars
         run: |
           # Use $'' to encapsulate string in order to preserve newlines
-          ENV_VARS=$'${{ secrets.CONTAINER_ENV_VARS }}'
-          if [ -z "$ENV_VARS" ]; then
-            echo "CONTAINER_ENV_VARS is not defined; skipping"
+          CONTAINER_ENV_VARS=$'${{ inputs.container_env_vars }}'
+          SECRET_ENV_VARS=$'${{ secrets.CONTAINER_ENV_VARS }}'
+
+          if [[ -z "$CONTAINER_ENV_VARS" && -z "$SECRET_ENV_VARS" ]]; then
+            echo "Neither container_env_vars input nor CONTAINER_ENV_VARS secret is defined;"
+            echo "no additional env vars will be set in the container"
             echo "environment=[]" >> "$GITHUB_OUTPUT"
           else
-            declare -a OUTPUT_ARRAY
-            while IFS= read -r line; do
-              # Our method of iterating the newline-delimited string can
-              # introduce empty lines, so we need to be sure to filter them out
-              if [ -z "$line" ]; then
-                echo "Encountered empty line in CONTAINER_ENV_VARS; skipping"
-              else
-                # Parse env vars into key/value spliting on equal
-                VAR_KEY=$(echo "$line" | cut -d '=' -f 1)
-                VAR_VAL=$(echo "$line" | cut -d '=' -f 2-)
-                # Env vars are often sensitive, so mask the value
-                echo "::add-mask::$VAR_VAL"
-                # Transform the var into the key/val JSON format that AWS expects
-                OUTPUT_ARRAY+=("{\"name\":\"${VAR_KEY}\",\"value\":\"${VAR_VAL}\"}")
-              fi
-            done <<< "$ENV_VARS"
+            declare -a OUTPUT_ARRAY  # Array to store parsed vars
+
+            parse_env_vars_and_add_to_output_array() {
+              while IFS= read -r line; do
+                # Our method of iterating the newline-delimited string can
+                # introduce empty lines, so we need to be sure to filter them out
+                if [ -z "$line" ]; then
+                  echo "Encountered empty line in container env vars; skipping"
+                else
+                  # Parse env vars into key/value spliting on equal
+                  VAR_KEY=$(echo "$line" | cut -d '=' -f 1)
+                  VAR_VAL=$(echo "$line" | cut -d '=' -f 2-)
+                  if [[ "$2" == "--mask" ]]; then
+                    # Env vars are sometimes sensitive, so mask the value
+                    echo "::add-mask::$VAR_VAL"
+                  fi
+                  # Transform the var into the key/val JSON format that AWS expects
+                  OUTPUT_ARRAY+=("{\"name\":\"${VAR_KEY}\",\"value\":\"${VAR_VAL}\"}")
+                fi
+              done <<< "$1"
+            }
+
+            if [ -n "$CONTAINER_ENV_VARS" ]; then
+              echo "container_env_vars input is set; adding to the container vars"
+              parse_env_vars_and_add_to_output_array "$CONTAINER_ENV_VARS"
+            fi
+            if [ -n "$SECRET_ENV_VARS" ]; then
+              echo "CONTAINER_ENV_VARS secret is set; adding to the container vars"
+              parse_env_vars_and_add_to_output_array "$SECRET_ENV_VARS" --mask
+            fi
+
+            # Join the output array of env vars
             echo "environment=[$(IFS=, ; echo "${OUTPUT_ARRAY[*]}")]" >> "$GITHUB_OUTPUT"
           fi
         shell: bash
-      # yamllint enable rule:line-length
 
+      # yamllint enable rule:line-length
       - name: Setup Terraform
         uses: ./actions/setup-terraform
         with:
