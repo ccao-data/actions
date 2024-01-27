@@ -74,7 +74,7 @@ runs:
         role-duration-seconds: ${{ inputs.role-duration-seconds }}
 
     - name: Set up Terraform
-      uses: hashicorp/setup-terraform@v2
+      uses: hashicorp/setup-terraform@v3
 
     - name: Initialize Terraform
       run: |
