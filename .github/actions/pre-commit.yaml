@@ -1,0 +1,31 @@
+name: 'Pre-Commit'
+description: 'Runs pre-commit hooks'
+inputs:
+  python-version:
+    description: 'The Python version to use'
+    required: true
+    default: '3.10.12'
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install pre-commit
+      run: sudo apt-get install pre-commit
+      shell: bash
+
+    - name: Cache pre-commit environment
+      uses: actions/cache@v2
+      with:
+        path: ~/.cache/pre-commit
+        key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+
+    - name: Run pre-commit
+      run: pre-commit run --show-diff-on-failure --color=always --all-files
+      shell: bash
