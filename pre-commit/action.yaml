@@ -31,7 +31,7 @@ runs:
         key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
 
     - name: Configure pre-commit hooks
-      run: python parse_hook_string.py "${{ inputs.hooks }}"
+      run: python ./parse_hook_string.py "${{ inputs.hooks }}"
       shell: bash
 
     - name: Run pre-commit
