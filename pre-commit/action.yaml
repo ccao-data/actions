@@ -1,4 +1,4 @@
-name: 'Pre-Commit'
+name: 'pre-commit'
 description: 'Runs pre-commit hooks'
 inputs:
   python-version:
