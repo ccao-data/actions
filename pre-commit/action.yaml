@@ -32,7 +32,7 @@ runs:
       uses: actions/cache@v2
       with:
         path: ~/.cache/pre-commit
-        key: pre-commit-${{ hashFiles(join(github.action_path, '/pre-commit/.pre-commit-config.yaml')) }}
+        key: pre-commit-${{ hashFiles(join(github.action_path, '/.pre-commit-config.yaml')) }}
 
     - name: Run pre-commit
       run: |
@@ -49,6 +49,6 @@ runs:
           --show-diff-on-failure \
           --color=always \
           --all-files \
-          --config "${{ github.action_path }}/pre-commit/.pre-commit-config.yaml" \
+          --config "${{ github.action_path }}/.pre-commit-config.yaml" \
           "${parsed_hooks[@]}"
       shell: bash
