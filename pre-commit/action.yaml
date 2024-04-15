@@ -50,5 +50,5 @@ runs:
           --color=always \
           --all-files \
           --config "${{ github.action_path }}/.pre-commit-config.yaml" \
-          "${parsed_hooks[@]}"
+          ${parsed_hooks[@]}
       shell: bash
