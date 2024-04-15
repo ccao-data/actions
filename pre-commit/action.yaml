@@ -45,10 +45,13 @@ runs:
         done <<< "${{ inputs.hooks }}" # Pass the input string as input to the while loop
 
         # Use the array of parsed hooks to run a specific set of hooks
-        pre-commit run \
-          --show-diff-on-failure \
-          --color=always \
-          --all-files \
-          --config "${{ github.action_path }}/.pre-commit-config.yaml" \
-          ${parsed_hooks[@]}
+        for hook in ${parsed_hooks[@]};
+        do
+          pre-commit run \
+            --show-diff-on-failure \
+            --color=always \
+            --all-files \
+            --config "${{ github.action_path }}/.pre-commit-config.yaml" \
+            "$hook"
+        done
       shell: bash
