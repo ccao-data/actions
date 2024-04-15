@@ -34,10 +34,16 @@ runs:
         path: ~/.cache/pre-commit
         key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
 
-    - name: Configure pre-commit hooks
-      run: python ${{ github.action_path }}/parse_hook_string.py "${{ inputs.hooks }}"
-      shell: bash
-
     - name: Run pre-commit
-      run: pre-commit run --show-diff-on-failure --color=always --all-files
+      run: |
+        # Initialize an array to store the parsed hook IDs
+        parsed_hooks=()
+      
+        # Parse the hook IDs from a space-separated string into an array of strings
+        while read -r hook; do
+          parsed_hooks+=("$hook")
+        done <<< "${{ inputs.hooks }}" # Pass the input string as input to the while loop
+
+        # Use the array of parsed hooks to run a specific set of hooks
+        pre-commit run --show-diff-on-failure --color=always --all-files "${parsed_hooks[@]}"
       shell: bash
