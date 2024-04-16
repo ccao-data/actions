@@ -28,7 +28,7 @@ runs:
       uses: actions/cache@v2
       with:
         path: ~/.cache/pre-commit
-        key: >-
+        key: >
           pre-commit-${{
             hashFiles(
               join(
