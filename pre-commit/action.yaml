@@ -28,7 +28,15 @@ runs:
       uses: actions/cache@v2
       with:
         path: ~/.cache/pre-commit
-        key: pre-commit-${{ hashFiles(join(github.action_path, '/.pre-commit-config.yaml')) }}
+        key: >
+          pre-commit-${{
+            hashFiles(
+              join(
+                github.action_path,
+                '/.pre-commit-config.yaml'
+              )
+            )
+          }}
     - name: Run pre-commit
       run: |
         # Initialize an array to store the parsed hook IDs
