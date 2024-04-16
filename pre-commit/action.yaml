@@ -1,10 +1,6 @@
 name: 'pre-commit'
 description: 'Runs pre-commit hooks'
 inputs:
-  python-version:
-    description: 'The Python version to use'
-    required: true
-    default: '3.10.12'
   hooks:
     description: 'The hooks to run, separated by commas'
     required: false
@@ -14,11 +10,6 @@ runs:
   steps:
     - name: Checkout
       uses: actions/checkout@v2
-
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ inputs.python-version }}
 
     - name: Install pre-commit
       run: sudo apt-get install pre-commit
