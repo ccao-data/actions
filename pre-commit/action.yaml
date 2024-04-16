@@ -41,7 +41,7 @@ runs:
       run: |
         # Initialize an array to store the parsed hook IDs
         parsed_hooks=()
-      
+
         # Parse the hook IDs from a space-separated
         # string into an array of strings
         while read -r hook; do
