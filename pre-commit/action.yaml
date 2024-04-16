@@ -28,17 +28,25 @@ runs:
       uses: actions/cache@v2
       with:
         path: ~/.cache/pre-commit
-        key: pre-commit-${{ hashFiles(join(github.action_path, '/.pre-commit-config.yaml')) }}
-
+        key: >-
+          pre-commit-${{
+            hashFiles(
+              join(
+                github.action_path,
+                '/.pre-commit-config.yaml'
+              )
+            )
+          }}
     - name: Run pre-commit
       run: |
         # Initialize an array to store the parsed hook IDs
         parsed_hooks=()
       
-        # Parse the hook IDs from a space-separated string into an array of strings
+        # Parse the hook IDs from a space-separated
+        # string into an array of strings
         while read -r hook; do
           parsed_hooks+=("$hook")
-        done <<< "${{ inputs.hooks }}" # Pass the input string as input to the while loop
+        done <<< "${{ inputs.hooks }}" # Pass string as input to the while loop
 
         # Use the array of parsed hooks to run a specific set of hooks
         for hook in ${parsed_hooks[@]};
