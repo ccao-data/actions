@@ -1,8 +1,8 @@
-name: 'pre-commit'
-description: 'Runs pre-commit hooks'
+name: pre-commit
+description: Runs pre-commit hooks
 
 runs:
-  using: 'composite'
+  using: composite
   steps:
     - name: Checkout
       uses: actions/checkout@v4
