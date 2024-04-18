@@ -19,12 +19,6 @@ runs:
           pre-commit-${{ hashFiles('/.pre-commit-config.yaml') }}
 
     - name: Run pre-commit
-      run: |
-          pre-commit run \
-            --show-diff-on-failure \
-            --color=always \
-            --all-files \
-            --config "${{ github.action_path }}/.pre-commit-config.yaml" \
-            "$hook"
+      run: pre-commit run --show-diff-on-failure --color=always --all-files
 
       shell: bash
