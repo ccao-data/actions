@@ -28,6 +28,7 @@ runs:
               )
             )
           }}
+
     - name: Run pre-commit
       run: |
         # Initialize an array to store the parsed hook IDs
