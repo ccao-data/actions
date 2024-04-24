@@ -20,7 +20,7 @@ runs:
         key: pre-commit-${{ hashFiles('/.pre-commit-config.yaml') }}
 
     - name: Echo hashFiles result
-      run: echo "${{ hashFiles('/.pre-commit-config.yaml') }}"
+      run: echo "${{ hashFiles('.pre-commit-config.yaml') }}"
       shell: bash
 
     - name: Run pre-commit
