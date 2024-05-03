@@ -20,7 +20,12 @@ runs:
         key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
 
     - name: Permissions check on R cache (debugging)
-      run: ls -lah /home/runner/.cache/R/R.cache
+      run: |
+        if [ -d /home/runner/.cache/R ]; then
+          ls -lah /home/runner/.cache/R/R.cache
+        else
+          echo "Directory /home/runner/.cache/R does not exist."
+        fi
       shell: bash
 
     - name: Run pre-commit
