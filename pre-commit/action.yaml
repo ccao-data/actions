@@ -24,7 +24,7 @@ runs:
         if [ -d /home/runner/.cache/R ]; then
           ls -lah /home/runner/.cache/R/R.cache
         else
-          echo "Directory not exist."
+          echo "Directory /home/runner/.cache/R not exist."
         fi
       shell: bash
 
