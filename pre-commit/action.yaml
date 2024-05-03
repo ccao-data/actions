@@ -15,6 +15,7 @@ runs:
       run: |
         echo "XDG_CACHE_HOME=$RUNNER_TEMP" >> $GITHUB_ENV
         echo "R_CACHE_ROOTPATH=$RUNNER_TEMP" >> $GITHUB_ENV
+        echo "TMPDIR=$RUNNER_TEMP" >> $GITHUB_ENV
       shell: bash
 
     - name: Find R cache key files
