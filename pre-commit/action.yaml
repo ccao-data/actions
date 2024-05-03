@@ -11,13 +11,22 @@ runs:
       run: sudo apt-get install pre-commit
       shell: bash
 
+    - name: Set cache paths
+      run: |
+        echo "XDG_CACHE_HOME=$RUNNER_TEMP" >> $GITHUB_ENV
+        echo "R_CACHE_ROOTPATH=$RUNNER_TEMP" >> $GITHUB_ENV
+      shell: bash
+
     - name: Cache pre-commit environment
       uses: actions/cache@v4
       with:
         path: |
-          ~/.cache/pre-commit
-          ~/.cache/R
+          ${{ env.XDG_CACHE_HOME }}/pre-commit
+          ${{ env.R_CACHE_ROOTPATH }}/R
         key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
 
     - name: Run pre-commit
       run: pre-commit run --show-diff-on-failure --color=always --all-files
