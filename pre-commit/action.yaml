@@ -1,6 +1,7 @@
 name: pre-commit
 description: Runs pre-commit hooks
 
+# yamllint disable rule:line-length
 runs:
   using: composite
   steps:
