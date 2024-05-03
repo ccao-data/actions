@@ -30,6 +30,7 @@ runs:
           ${{ env.XDG_CACHE_HOME }}/pre-commit
           ${{ env.R_CACHE_ROOTPATH }}/styler-perm
           ${{ env.R_CACHE_ROOTPATH }}/R
+          ${{ env.R_CACHE_ROOTPATH }}/pip
         key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
 
     - name: Run pre-commit
