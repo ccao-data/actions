@@ -22,7 +22,7 @@ runs:
       with:
         path: |
           ${{ env.XDG_CACHE_HOME }}/pre-commit
-          ${{ env.R_CACHE_ROOTPATH }}/R
+          ${{ env.R_CACHE_ROOTPATH }}/styler-perm
         key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
 
     - name: Setup tmate session
