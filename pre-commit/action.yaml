@@ -20,7 +20,7 @@ runs:
         key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
 
     - name: Permissions check on R cache (debugging)
-      run: |
+      run: >
         if [ -d /home/runner/.cache/R ]; then
           ls -lah /home/runner/.cache/R/R.cache
         else
