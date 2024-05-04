@@ -1,7 +1,6 @@
 name: pre-commit
 description: Runs pre-commit hooks
 
-# yamllint disable rule:line-length
 runs:
   using: composite
   steps:
@@ -12,9 +11,8 @@ runs:
       run: sudo apt-get install pre-commit
       shell: bash
 
-    - name: Set styler cache path
-      run: |
-        echo "options(styler.cache_root = 'styler-perm', R.cache.rootPath = '$RUNNER_TEMP')" > $HOME/.Rprofile
+    - name: Disable R.cache integration
+      run: echo "options(R.cache.enabled = FALSE)" > $HOME/.Rprofile
       shell: bash
 
     - name: Set other cache paths
@@ -28,13 +26,9 @@ runs:
       with:
         path: |
           ${{ env.XDG_CACHE_HOME }}/pre-commit
-          ${{ env.XDG_CACHE_HOME }}/styler-perm
           ${{ env.XDG_CACHE_HOME }}/R
           ${{ env.XDG_CACHE_HOME }}/pip
         key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
-
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
 
     - name: Run pre-commit
       run: pre-commit run --show-diff-on-failure --color=always --all-files
