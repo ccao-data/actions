@@ -182,6 +182,11 @@ resource "aws_batch_compute_environment" "fargate" {
     security_group_ids = [data.aws_security_group.outbound_https.id]
     subnets            = data.aws_subnets.default.ids
   }
+
+  update_policy {
+    job_execution_timeout_minutes = 30
+    terminate_jobs_on_update      = false
+  }
 }
 
 resource "aws_batch_compute_environment" "ec2" {
@@ -202,6 +207,11 @@ resource "aws_batch_compute_environment" "ec2" {
     instance_type       = local.gpu_enabled ? ["g5"] : ["m4"]
     security_group_ids  = [data.aws_security_group.outbound_https.id]
     subnets             = data.aws_subnets.default.ids
+  }
+
+  update_policy {
+    job_execution_timeout_minutes = 30
+    terminate_jobs_on_update      = false
   }
 }
 
