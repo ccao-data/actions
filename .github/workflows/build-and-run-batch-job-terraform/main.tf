@@ -220,19 +220,27 @@ resource "aws_batch_compute_environment" "ec2" {
 # where its associated compute environment has reached max capacity. Docs here:
 # https://docs.aws.amazon.com/batch/latest/userguide/job_queues.html
 resource "aws_batch_job_queue" "fargate" {
-  count                = var.batch_compute_environment_backend == "fargate" ? 1 : 0
-  name                 = local.batch_job_name
-  compute_environments = [aws_batch_compute_environment.fargate[0].arn]
-  priority             = 0
-  state                = "ENABLED"
+  count    = var.batch_compute_environment_backend == "fargate" ? 1 : 0
+  name     = local.batch_job_name
+  priority = 0
+  state    = "ENABLED"
+
+  compute_environment_order {
+    order               = 1
+    compute_environment = aws_batch_compute_environment.fargate[0].arn
+  }
 }
 
 resource "aws_batch_job_queue" "ec2" {
-  count                = var.batch_compute_environment_backend == "ec2" ? 1 : 0
-  name                 = local.batch_job_name
-  compute_environments = [aws_batch_compute_environment.ec2[0].arn]
-  priority             = 0
-  state                = "ENABLED"
+  count    = var.batch_compute_environment_backend == "ec2" ? 1 : 0
+  name     = local.batch_job_name
+  priority = 0
+  state    = "ENABLED"
+
+  compute_environment_order {
+    order               = 1
+    compute_environment = aws_batch_compute_environment.ec2[0].arn
+  }
 }
 
 # Create a Batch job definition to define jobs. Job definitions provide the
