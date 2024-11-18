@@ -9,11 +9,6 @@ runs:
 
     - name: Install uv
       uses: astral-sh/setup-uv@v3
-      with:
-        # No cache since we only need one dependency and we don't want to rely
-        # on the existence of lockfiles for cache hashing
-        enable-cache: false
-        prune-cache: false
 
     - name: Install pre-commit
       run: uv pip install pre-commit
