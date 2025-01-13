@@ -25,6 +25,7 @@ runs:
         path: |
           ~/.cache/pre-commit
           ~/.cache/R
+          ~/.local/share/renv/cache
         key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
 
     - name: Run pre-commit
