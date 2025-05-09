@@ -288,14 +288,35 @@ jobs:
           )"
 
           # Parse contianer override configuration for Batch job. Batch expects
-          # a JSON string for this parameter. Since we expect the
-          # BATCH_JOB_ENVIRONMENT variable to be a JSON array itself, we don't
-          # wrap it in quotes, but we _do_ wrap BATCH_JOB_COMMAND since that
-          # variable should be a string
-          BATCH_JOB_OVERRIDE_ENVIRONMENT=$([ -z "$BATCH_JOB_ENVIRONMENT" ] && echo "" || echo "\"environment\":${BATCH_JOB_ENVIRONMENT}")
-          BATCH_JOB_OVERRIDE_COMMAND=$([ -z "$BATCH_JOB_COMMAND" ] && echo "" || echo "\"command\":[\"sh\", \"-c\", \"${BATCH_JOB_COMMAND}\"]")
-          BATCH_JOB_OVERRIDE_SEPARATOR=$([ -z "$BATCH_JOB_ENVIRONMENT" || -z "$BATCH_JOB_COMMAND" ] && echo "" || echo ",")
-          BATCH_JOB_CONTAINER_OVERRIDES="{${BATCH_JOB_OVERRIDE_ENVIRONMENT}${BATCH_JOB_OVERRIDE_SEPARATOR}${BATCH_JOB_OVERRIDE_COMMAND}}"
+          # a JSON string for this parameter, so we extract out each key-value
+          # pair separately and then concatenate them together
+          BATCH_JOB_OVERRIDE_ENVIRONMENT=$(
+            if [ -z "$BATCH_JOB_ENVIRONMENT" ]; then
+              echo ""
+            else
+              # BATCH_JOB_ENVIRONMENT should be a JSON array, so we don't wrap
+              # wrap it in quotes, and instead template it into the string
+              # as-is
+              echo "\"environment\":${BATCH_JOB_ENVIRONMENT}"
+            fi
+          )
+          BATCH_JOB_OVERRIDE_COMMAND=$(
+            if [ -z "$BATCH_JOB_COMMAND" ]; then
+              echo ""
+            else
+              # Batch expects the "command" key to map to an array with a=
+              # command in Docker syntax, so format it that way
+              echo "\"command\":[\"sh\", \"-c\", \"${BATCH_JOB_COMMAND}\"]"
+            fi
+          )
+          BATCH_JOB_OVERRIDE_SEPARATOR=$(
+            if [ -z "$BATCH_JOB_ENVIRONMENT" ] || [ -z "$BATCH_JOB_COMMAND" ];
+            then
+              echo ""
+            else
+              echo ","
+            fi
+          )
           echo "Container overrides: '${BATCH_JOB_CONTAINER_OVERRIDES}'"
 
           BATCH_JOB_DETAILS=$(\
