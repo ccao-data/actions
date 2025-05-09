@@ -320,7 +320,6 @@ jobs:
             fi
           )
           BATCH_JOB_CONTAINER_OVERRIDES="{${BATCH_JOB_OVERRIDE_ENVIRONMENT}${BATCH_JOB_OVERRIDE_SEPARATOR}${BATCH_JOB_OVERRIDE_COMMAND}}"
-          echo "Container overrides: '${BATCH_JOB_CONTAINER_OVERRIDES}'"
 
           BATCH_JOB_DETAILS=$(\
             aws batch submit-job \
