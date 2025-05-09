@@ -287,16 +287,16 @@ jobs:
             terraform-bin output -raw batch_job_definition_arn \
           )"
 
-          # Parse contianer override configuration for Batch job. Batch expects
+          # Parse container override configuration for Batch job. Batch expects
           # a JSON string for this parameter, so we extract out each key-value
           # pair separately and then concatenate them together
           BATCH_JOB_OVERRIDE_ENVIRONMENT=$(
             if [ -z "$BATCH_JOB_ENVIRONMENT" ]; then
               echo ""
             else
-              # BATCH_JOB_ENVIRONMENT should be a JSON array, so we don't wrap
-              # wrap it in quotes, and instead template it into the string
-              # as-is
+              # BATCH_JOB_ENVIRONMENT should be a JSON array, so we don't
+              # wrap it in quotes, and instead we template it directly
+              # into the string
               echo "\"environment\":${BATCH_JOB_ENVIRONMENT}"
             fi
           )
@@ -304,8 +304,10 @@ jobs:
             if [ -z "$BATCH_JOB_COMMAND" ]; then
               echo ""
             else
-              # Batch expects the "command" key to map to an array with a=
-              # command in Docker syntax, so format it that way
+              # Batch expects the "command" key to map to an array describing
+              # a command using Docker CMD syntax, but the input variable
+              # expects a string, so we need to wrap the input command
+              # in a `sh -c` call so that Batch parses it properly
               echo "\"command\":[\"sh\", \"-c\", \"${BATCH_JOB_COMMAND}\"]"
             fi
           )
@@ -317,6 +319,7 @@ jobs:
               echo ","
             fi
           )
+          BATCH_JOB_CONTAINER_OVERRIDES="{${BATCH_JOB_OVERRIDE_ENVIRONMENT}${BATCH_JOB_OVERRIDE_SEPARATOR}${BATCH_JOB_OVERRIDE_COMMAND}}"
           echo "Container overrides: '${BATCH_JOB_CONTAINER_OVERRIDES}'"
 
           BATCH_JOB_DETAILS=$(\
