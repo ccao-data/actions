@@ -75,6 +75,13 @@ on:
         required: false
         type: boolean
         default: true
+      command:
+        description: >
+          Optional override for the command that Batch will run on the
+          container.
+        required: false
+        type: string
+        default: ""
 
 
     secrets:
@@ -280,11 +287,13 @@ jobs:
             terraform-bin output -raw batch_job_definition_arn \
           )"
 
-          if [ -z "$BATCH_JOB_ENVIRONMENT" ]; then
-            BATCH_JOB_CONTAINER_OVERRIDES="{}"
-          else
-            BATCH_JOB_CONTAINER_OVERRIDES="{\"environment\":${BATCH_JOB_ENVIRONMENT}}"
-          fi
+          # Parse contianer override configuration for Batch job. Batch expects
+          # a JSON string
+          BATCH_JOB_OVERRIDE_ENVIRONMENT=$([ -z "$BATCH_JOB_ENVIRONMENT" ] && echo "" || echo "\"environment\":\"${BATCH_JOB_ENVIRONMENT}\"")
+          BATCH_JOB_OVERRIDE_COMMAND=$([ -z "$BATCH_JOB_COMMAND" ] && echo "" || echo "\"command\":\"${BATCH_JOB_COMMAND}\"")
+          BATCH_JOB_OVERRIDE_SEPARATOR=$([ -z "$BATCH_JOB_ENVIRONMENT" || -z "$BATCH_JOB_COMMAND" ] && echo "" || echo ", ")
+          BATCH_JOB_CONTAINER_OVERRIDES="{${BATCH_JOB_OVERRIDE_ENVIRONMENT}${BATCH_JOB_OVERRIDE_SEPARATOR}${BATCH_JOB_OVERRIDE_COMMAND}}"
+          echo "Container overrides: '${BATCH_JOB_CONTAINER_OVERRIDES}'"
 
           BATCH_JOB_DETAILS=$(\
             aws batch submit-job \
@@ -298,6 +307,7 @@ jobs:
         shell: bash
         working-directory: ${{ env.TF_WORKDIR }}
         env:
+          BATCH_JOB_COMMAND: ${{ inputs.command }}
           BATCH_JOB_ENVIRONMENT: ${{ steps.parse-env-vars.outputs.environment }}
 
       - name: Wait for Batch job to start and print link to AWS logs
