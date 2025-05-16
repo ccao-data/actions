@@ -82,6 +82,13 @@ on:
         required: false
         type: string
         default: ""
+      ingest_command:
+        description: >
+          Optional ingest to allow data upload from a model run without
+          DVC ingest
+        required: false
+        type: string
+        default: ""
 
 
     secrets:
