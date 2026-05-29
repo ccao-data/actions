@@ -10,9 +10,9 @@ runs:
       # R is no longer preinstalled on GitHub runners as of Ubuntu 24.04, so we
       # need to install it to support consumers that are checking R code
     - name: Setup R
-      uses: r-lib/actions/setup-r@a51a8012b0aab7c32ef9d19bf54da93f3254335e # v2
+      uses: r-lib/actions/setup-r@a51a8012b0aab7c32ef9d19bf54da93f3254335e # v2.12.0
       with:
-        r-version: "4.4"
+        r-version: "4.5"
         use-public-rspm: true
 
     - name: Install pre-commit
