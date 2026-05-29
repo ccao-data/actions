@@ -9,6 +9,7 @@ directory) and bash scripts to support them (stored in the
 # Quick links
 
 * [Actions](#actions)
+  * [`pre-commit`](#pre-commit)
   * [`setup-terraform`](#setup-terraform)
   * [`cleanup-terraform`](#cleanup-terraform)
 * [Workflows](#workflows)
@@ -17,6 +18,27 @@ directory) and bash scripts to support them (stored in the
 # Actions
 
 The following composite actions are available for use:
+
+## pre-commit
+
+Install and run [pre-commit](https://pre-commit.com/) hooks. The build will
+fail if any hooks fail.
+
+### Requirements
+
+* A `.pre-commit-config.yaml` file must exist in your repo with configs for
+  all of the hooks that you want pre-commit to run.
+* The action will install R for convenience, since many of our projects rely on
+  R hooks. If your hooks require any other dependencies beyond the software that
+  comes [pre-installed on your
+  runner](https://docs.github.com/en/actions/concepts/runners/github-hosted-runners#preinstalled-software-for-github-owned-images),
+  make sure to add steps to your workflow to install those dependencies before
+  the step that uses this action.
+
+### Sample usage
+
+See the [`pre-commit` workflow](./.github/workflows/pre-commit.yaml) in this
+repo.
 
 ## setup-terraform
 
