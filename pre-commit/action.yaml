@@ -7,12 +7,16 @@ runs:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+    - name: Install system requirements
+      run: sudo apt install libnode-dev
+      shell: bash
+
       # R is no longer preinstalled on GitHub runners as of Ubuntu 24.04, so we
       # need to install it to support consumers that are checking R code
     - name: Setup R
       uses: r-lib/actions/setup-r@a51a8012b0aab7c32ef9d19bf54da93f3254335e # v2.12.0
       with:
-        r-version: "4.4"
+        r-version: "4.5"
         use-public-rspm: true
 
     - name: Install pre-commit
