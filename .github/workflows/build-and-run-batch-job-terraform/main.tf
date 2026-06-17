@@ -207,6 +207,10 @@ resource "aws_batch_compute_environment" "ec2" {
     instance_type       = local.gpu_enabled ? ["g5"] : ["m4"]
     security_group_ids  = [data.aws_security_group.outbound_https.id]
     subnets             = data.aws_subnets.default.ids
+
+    ec2_configuration {
+      image_type = local.gpu_enabled ? "ECS_AL2023_NVIDIA" : "ECS_AL2023"
+    }
   }
 
   update_policy {
