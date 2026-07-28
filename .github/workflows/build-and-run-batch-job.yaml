@@ -178,6 +178,11 @@ jobs:
           # Fix incorrect container type sidebar display in GitHub Container
           # Registry
           provenance: false
+          # Mount GitHub token into the container as a secret. This helps when
+          # installing R packages from GitHub using renv. Without a GitHub
+          # token, workflows frequently fail due to rate limiting
+          secrets: |
+            "github_token=${{ secrets.GITHUB_TOKEN }}"
 
       - name: Save image name to output
         id: save-image-name
