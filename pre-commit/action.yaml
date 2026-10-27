@@ -11,6 +11,9 @@ runs:
       uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
       with:
         r-version: "4.6"
+        # Disable RSPM override so that we ensure we download packages from the
+        # exact same sources as recorded in the lockfile for R pre-commit hooks
+        use-public-rspm: false
 
     - name: Setup uv
       uses: astral-sh/setup-uv@v10.3.2
