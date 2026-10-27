@@ -5,22 +5,22 @@ runs:
   using: composite
   steps:
     - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # R is no longer preinstalled on GitHub runners as of Ubuntu 24.04, so we
-      # need to install it to support consumers that are checking R code
     - name: Setup R
-      uses: r-lib/actions/setup-r@a51a8012b0aab7c32ef9d19bf54da93f3254335e # v2.12.0
+      uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
       with:
-        r-version: "4.5"
-        use-public-rspm: true
+        r-version: "4.6"
+
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v10.3.2
 
     - name: Install pre-commit
-      run: pip install pre-commit
+      run: uv tool install pre-commit
       shell: bash
 
     - name: Cache pre-commit environment
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5.1.0
       with:
         path: |
           ~/.cache/pre-commit
