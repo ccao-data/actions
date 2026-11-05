@@ -167,7 +167,7 @@ jobs:
         # yamllint disable-line rule:line-length
         if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
         id: build-and-push
-        uses: docker/build-push-action@v7.2.0
+        uses: docker/build-push-action@v7.4.0
         with:
           context: .
           push: true
