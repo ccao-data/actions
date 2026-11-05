@@ -215,10 +215,16 @@ jobs:
       # yamllint disable rule:line-length
       - name: Parse and mask container env vars
         id: parse-env-vars
+        env:
+          # Pass these values through intermediate env vars instead of
+          # interpolating them directly, to prevent shell injection
+          CONTAINER_ENV_VARS_INPUT: ${{ inputs.container_env_vars }}
+          SECRET_ENV_VARS_INPUT: ${{ secrets.CONTAINER_ENV_VARS }}
         run: |
-          # Use $'' to encapsulate string in order to preserve newlines
-          CONTAINER_ENV_VARS=$'${{ inputs.container_env_vars }}'
-          SECRET_ENV_VARS=$'${{ secrets.CONTAINER_ENV_VARS }}'
+          # Use `printf %b` to ensure literal backlash escapes get properly
+          # interpreted, e.g. \n will render as a new line
+          CONTAINER_ENV_VARS=$(printf '%b' "$CONTAINER_ENV_VARS_INPUT")
+          SECRET_ENV_VARS=$(printf '%b' "$SECRET_ENV_VARS_INPUT")
 
           if [[ -z "$CONTAINER_ENV_VARS" && -z "$SECRET_ENV_VARS" ]]; then
             echo "Neither container_env_vars input nor CONTAINER_ENV_VARS secret is defined;"
